@@ -2573,6 +2573,49 @@ td small {
   white-space: nowrap;
 }
 
+.ticket-locked-notice {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: #eef3f6;
+}
+
+.ticket-locked-notice strong {
+  color: var(--text);
+}
+
+.ticket-locked button:disabled,
+.ticket-locked select:disabled,
+.ticket-locked textarea:disabled,
+.ticket-locked input:disabled,
+.ticket-locked .file-drop-area {
+  color: #7c8794 !important;
+  background: #edf1f4 !important;
+  border-color: #d8e0e7 !important;
+  box-shadow: none !important;
+  filter: grayscale(1);
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.ticket-locked .file-drop-area input:disabled {
+  pointer-events: none;
+}
+
+.ticket-locked .reopen-ticket-action {
+  grid-column: 1 / -1;
+  color: #ffffff !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+  filter: none;
+  opacity: 1;
+  cursor: pointer;
+}
+
 .comment-form {
   margin-bottom: 16px;
 }

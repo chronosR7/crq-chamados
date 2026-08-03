@@ -466,6 +466,10 @@ function ticketIsCritical(ticket: Ticket) {
   return active && ticket.priority === "critica";
 }
 
+function ticketRequiresReopen(ticket: Ticket) {
+  return ticket.status === "solucionado" || ticket.status === "fechado";
+}
+
 function nextTicketId() {
   if (!data.tickets.length) return 1;
   return Math.max(0, ...data.tickets.map((t) => t.id)) + 1;
@@ -1621,7 +1625,7 @@ function renderRecentList(tickets: Ticket[]) {
 /** Renderiza a view de lista de chamados com filtros e barra de ferramentas */
 function renderTickets(user: User) {
   const tickets = filteredTickets().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  const selected = tickets.find((t) => t.id === state.selectedTicketId);
+  const selected = visibleTickets().find((t) => t.id === state.selectedTicketId);
   const detailOpen = state.ticketDetailOpen && Boolean(selected);
 
   return `
@@ -1783,6 +1787,8 @@ function renderTicketTable(tickets: Ticket[]) {
 function renderTicketDetail(ticket: Ticket, user: User) {
   const requester = userById(ticket.requesterId);
   const assigned = userById(ticket.assignedId);
+  const interactionsLocked = ticketRequiresReopen(ticket);
+  const lockedAttr = interactionsLocked ? "disabled aria-disabled=\"true\"" : "";
   return `
     <div class="detail-header">
       <div>
@@ -1820,13 +1826,13 @@ function renderTicketDetail(ticket: Ticket, user: User) {
 
     ${user.role === "tic" ? renderTicActions(ticket) : renderUserActions(ticket, user)}
 
-    <form id="comment-form" class="comment-form">
+    <form id="comment-form" class="comment-form ${interactionsLocked ? "ticket-locked" : ""}">
       <label>
         Complementar chamado
-        <textarea id="comment-text" rows="3" placeholder="Registrar atualização"></textarea>
+        <textarea id="comment-text" rows="3" placeholder="Registrar atualização" ${lockedAttr}></textarea>
       </label>
       <div class="file-drop-area comment-file-drop">
-        <input id="comment-attachments-input" type="file" accept="${ATTACHMENT_ACCEPT}" multiple aria-label="Anexar arquivos ao complemento" />
+        <input id="comment-attachments-input" type="file" accept="${ATTACHMENT_ACCEPT}" multiple aria-label="Anexar arquivos ao complemento" ${interactionsLocked ? "disabled" : ""} />
         <div class="file-drop-message">
           <i data-lucide="paperclip"></i>
           <span>Anexar arquivos ao complemento</span>
@@ -1834,7 +1840,7 @@ function renderTicketDetail(ticket: Ticket, user: User) {
         </div>
       </div>
       <div id="comment-file-list" class="comment-file-list" aria-live="polite"></div>
-      <button class="secondary-button" type="submit">
+      <button class="secondary-button" type="submit" ${lockedAttr}>
         <i data-lucide="message-square-plus"></i>
         Adicionar
       </button>
@@ -1863,46 +1869,61 @@ function renderTicketDetail(ticket: Ticket, user: User) {
 
 function renderTicActions(ticket: Ticket) {
   const ticUsers = data.users.filter((u) => u.role === "tic" && u.active);
+  const reopenLocked = ticketRequiresReopen(ticket);
+  const lockedAttr = reopenLocked ? "disabled aria-disabled=\"true\"" : "";
+  const lockedLabel = ticket.status === "fechado" ? "Chamado fechado" : "Chamado solucionado";
   return `
-    <div class="tic-actions">
+    <div class="tic-actions ${reopenLocked ? "ticket-locked" : ""}">
+      ${reopenLocked ? `
+        <div class="ticket-locked-notice">
+          <strong>${lockedLabel}</strong>
+          <span>Somente a reabertura libera novamente as ações do chamado.</span>
+        </div>
+      ` : ""}
       <label>
         Responsável
-        <select id="ticket-assignee">
+        <select id="ticket-assignee" ${reopenLocked ? "disabled" : ""}>
           <option value="">Fila TIC</option>
           ${ticUsers.map((u) => `<option value="${u.id}" ${ticket.assignedId === u.id ? "selected" : ""}>${escapeHtml(u.fullName)}</option>`).join("")}
         </select>
       </label>
       <label>
         Prioridade
-        <select id="ticket-priority">
+        <select id="ticket-priority" ${reopenLocked ? "disabled" : ""}>
           ${Object.entries(priorityLabels).map(([p, label]) => `<option value="${p}" ${ticket.priority === p ? "selected" : ""}>${label}</option>`).join("")}
         </select>
       </label>
       <div class="action-row">
-        <button class="secondary-button ticket-action" type="button" data-action="start">
+        <button class="secondary-button ticket-action" type="button" data-action="start" ${lockedAttr}>
           <i data-lucide="play"></i>
           Inicializar
         </button>
-        <button class="secondary-button ticket-action" type="button" data-action="plan">
+        <button class="secondary-button ticket-action" type="button" data-action="plan" ${lockedAttr}>
           <i data-lucide="calendar-clock"></i>
           Planejar
         </button>
-        <button class="secondary-button ticket-action" type="button" data-action="pend">
+        <button class="secondary-button ticket-action" type="button" data-action="pend" ${lockedAttr}>
           <i data-lucide="circle-help"></i>
           Pendenciar
         </button>
-        <button class="secondary-button ticket-action" type="button" data-action="solve">
+        <button class="secondary-button ticket-action" type="button" data-action="solve" ${lockedAttr}>
           <i data-lucide="circle-check"></i>
           Solucionar
         </button>
-        <button class="secondary-button ticket-action" type="button" data-action="close">
+        <button class="secondary-button ticket-action" type="button" data-action="close" ${lockedAttr}>
           <i data-lucide="archive"></i>
           Fechar
         </button>
-        <button class="danger-button ticket-action" type="button" data-action="delete">
+        <button class="danger-button ticket-action" type="button" data-action="delete" ${lockedAttr}>
           <i data-lucide="trash-2"></i>
           Excluir
         </button>
+        ${reopenLocked ? `
+          <button class="primary-button ticket-action reopen-ticket-action" type="button" data-action="reopen">
+            <i data-lucide="rotate-ccw"></i>
+            Reabrir chamado
+          </button>
+        ` : ""}
       </div>
     </div>
   `;
@@ -1911,7 +1932,7 @@ function renderTicActions(ticket: Ticket) {
 function renderUserActions(ticket: Ticket, user: User) {
   const isRequester = ticket.requesterId === user.id;
   const isManagerOfDept = user.role === "gestor" && visibleDepartmentIds(user).includes(ticket.departmentId);
-  const canDelete = (isRequester || isManagerOfDept) && ticket.status !== "excluido";
+  const canDelete = (isRequester || isManagerOfDept) && ticket.status !== "excluido" && !ticketRequiresReopen(ticket);
 
   if (!canDelete) return "";
 
@@ -3853,6 +3874,10 @@ function bindTicketForms() {
     const fileInput = document.querySelector<HTMLInputElement>("#comment-attachments-input");
     const files = Array.from(fileInput?.files ?? []);
     if (!user || !ticket || (!text && files.length === 0)) return;
+    if (ticketRequiresReopen(ticket)) {
+      showSystemAlert("Reabra o chamado antes de adicionar complementos.");
+      return;
+    }
     const invalidAttachment = files.map(validateAttachment).find(Boolean);
     if (invalidAttachment) {
       showSystemAlert(invalidAttachment);
@@ -3919,6 +3944,7 @@ function bindTicketForms() {
 
   document.querySelector<HTMLSelectElement>("#ticket-assignee")?.addEventListener("change", (event) => {
     updateSelectedTicket((ticket, user) => {
+      if (ticketRequiresReopen(ticket)) return;
       const select = event.currentTarget as HTMLSelectElement;
       ticket.assignedId = select.value || undefined;
       ticket.updatedAt = nowIso();
@@ -3929,6 +3955,7 @@ function bindTicketForms() {
 
   document.querySelector<HTMLSelectElement>("#ticket-priority")?.addEventListener("change", (event) => {
     updateSelectedTicket((ticket, user) => {
+      if (ticketRequiresReopen(ticket)) return;
       const select = event.currentTarget as HTMLSelectElement;
       ticket.priority = select.value as Priority;
       ticket.updatedAt = nowIso();
@@ -3999,9 +4026,40 @@ async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => voi
   }
 }
 
+function keepTicketInFocus(ticket: Ticket) {
+  state.view = "tickets";
+  state.selectedTicketId = ticket.id;
+  state.ticketDetailOpen = ticket.status !== "excluido";
+  state.filters.status = ticket.status === "excluido" ? "todos" : ticket.status;
+}
+
 function handleTicketAction(action: string) {
   const ticket = data.tickets.find((t) => t.id === state.selectedTicketId);
   if (!ticket) return;
+
+  if (action === "reopen") {
+    if (!ticketRequiresReopen(ticket)) return;
+    showSystemConfirm(`Reabrir chamado #${ticket.id}? Ele voltará para a fila da TIC.`, () => {
+      updateSelectedTicket((t, user) => {
+        if (!ticketRequiresReopen(t)) return;
+        const timestamp = nowIso();
+        t.status = "novo";
+        t.assignedId = undefined;
+        t.solvedAt = undefined;
+        t.closedAt = undefined;
+        t.plannedFor = undefined;
+        t.plannedNotificationSent = false;
+        t.pendingStartedAt = undefined;
+        t.updatedAt = timestamp;
+        t.events.push({ id: makeId("evt"), actorId: user.id, type: "Reabertura", message: "Chamado reaberto e devolvido para a fila TIC.", createdAt: timestamp });
+        notifyTicket(t, `Chamado #${t.id} reaberto`, "O chamado voltou para a fila de atendimento da TIC.");
+        keepTicketInFocus(t);
+      });
+    });
+    return;
+  }
+
+  if (ticketRequiresReopen(ticket)) return;
 
   if (action === "delete") {
     showSystemConfirm(`Tem certeza que deseja excluir o chamado #${ticket.id}? Ele será movido para a lixeira.`, () => {
@@ -4033,6 +4091,7 @@ function handleTicketAction(action: string) {
           const msg = `[Pendência]: ${reason}`;
           t.events.push({ id: makeId("evt"), actorId: user.id, type: "Pendência", message: msg, createdAt: timestamp });
           notifyTicket(t, `Pendência no chamado #${t.id}`, `Motivo da pendência: ${reason}`);
+          keepTicketInFocus(t);
         });
       }
     );
@@ -4062,6 +4121,7 @@ function handleTicketAction(action: string) {
           const msg = `Atendimento agendado para ${formattedPlanned}.`;
           t.events.push({ id: makeId("evt"), actorId: user.id, type: "Planejamento", message: msg, createdAt: timestamp });
           notifyTicket(t, `Chamado #${t.id} agendado`, `Seu chamado foi agendado pela equipe TIC para ${formattedPlanned}.`);
+          keepTicketInFocus(t);
         });
       },
       minTime
@@ -4084,6 +4144,7 @@ function handleTicketAction(action: string) {
           const msg = `[Fechamento sem solução]: ${reason}`;
           t.events.push({ id: makeId("evt"), actorId: user.id, type: "Fechamento", message: msg, createdAt: timestamp });
           notifyTicket(t, `Chamado #${ticket.id} fechado`, `Chamado fechado sem solução. Motivo: ${reason}`);
+          keepTicketInFocus(t);
         });
       }
     );
@@ -4115,6 +4176,7 @@ function handleTicketAction(action: string) {
 
     t.events.push({ id: makeId("evt"), actorId: user.id, type: update.type, message: update.message, createdAt: timestamp });
     notifyTicket(t, `Chamado #${t.id}: ${update.type}`, update.message);
+    keepTicketInFocus(t);
   });
 }
 
