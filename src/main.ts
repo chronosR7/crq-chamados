@@ -233,6 +233,12 @@ function saveData() {
   }, 0);
 }
 
+function saveDataNow() {
+  if (saveTimer) window.clearTimeout(saveTimer);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  saveTimer = undefined;
+}
+
 function seedData(): AppData {
   const base = new Date();
   const departments: Department[] = [
@@ -1093,7 +1099,7 @@ function renderCompactTable(tickets: Ticket[]) {
 
 function renderTickets(user: User) {
   const tickets = filteredTickets().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-  const selected = tickets.find((ticket) => ticket.id === state.selectedTicketId);
+  const selected = visibleTickets().find((ticket) => ticket.id === state.selectedTicketId);
   const detailOpen = state.ticketDetailOpen && Boolean(selected);
 
   return `
@@ -2037,13 +2043,24 @@ function eventLog(actorId: string, type: string, message: string) {
   return createEvent(actorId, type, message, nowIso());
 }
 
-function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => void) {
+function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => void, options: { immediateSave?: boolean } = {}) {
   const user = currentUser();
   const ticket = data.tickets.find((candidate) => candidate.id === state.selectedTicketId);
   if (!user || !ticket || user.role !== "tic") return;
   mutator(ticket, user);
-  saveData();
+  if (options.immediateSave) {
+    saveDataNow();
+  } else {
+    saveData();
+  }
   render();
+}
+
+function keepTicketInFocus(ticket: Ticket) {
+  state.view = "tickets";
+  state.selectedTicketId = ticket.id;
+  state.ticketDetailOpen = ticket.status !== "excluido";
+  state.filters.status = ticket.status;
 }
 
 function handleTicketAction(action: string) {
@@ -2077,7 +2094,8 @@ function handleTicketAction(action: string) {
     if (action === "close") ticket.closedAt = timestamp;
     ticket.events.push(createEvent(user.id, update.type, update.message, timestamp));
     notifyTicket(ticket, `Chamado #${ticket.id}: ${update.type}`, update.message);
-  });
+    keepTicketInFocus(ticket);
+  }, { immediateSave: true });
 }
 
 function confirmReopenTicket() {
