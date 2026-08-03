@@ -3954,14 +3954,42 @@ async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => voi
   if (!isTic && !isRequester && !isManagerOfDept) return;
 
   const ticketSnapshot = JSON.parse(JSON.stringify(ticket)) as Ticket;
+  const eventIdsBefore = new Set(ticket.events.map((event) => event.id));
   const notificationIdsBefore = new Set(data.notifications.map((notification) => notification.id));
   mutator(ticket, user);
   try {
     if (isSupabaseConfigured()) {
       const updated = await updateTicketInSupabase(ticket);
       if (!updated) throw new Error("O servidor recusou a atualização do chamado.");
+
+      // Chamado, histórico e notificações são tabelas diferentes. Depois que a
+      // alteração principal foi aceita, uma falha secundária não pode fazer a
+      // interface fingir que o chamado voltou ao estado anterior.
+      let auxiliarySyncFailed = false;
+      const newEvents = ticket.events.filter((event) => !eventIdsBefore.has(event.id));
+      for (const event of newEvents) {
+        try {
+          await createTicketEventInSupabase(ticket.id, event);
+        } catch (eventError) {
+          auxiliarySyncFailed = true;
+          devWarn("Chamado atualizado, mas o histórico não foi sincronizado:", eventError);
+        }
+      }
+
+      const newNotifications = data.notifications.filter(
+        (notification) => !notificationIdsBefore.has(notification.id)
+      );
+      try {
+        await createNotificationsInSupabase(newNotifications);
+      } catch (notificationError) {
+        auxiliarySyncFailed = true;
+        devWarn("Chamado atualizado, mas as notificações não foram entregues:", notificationError);
+        data.notifications = data.notifications.filter((notification) => notificationIdsBefore.has(notification.id));
+      }
+      if (auxiliarySyncFailed) {
+        showSystemAlert("O chamado foi atualizado, mas parte do histórico ou das notificações não pôde ser sincronizada.");
+      }
     }
-    await saveData();
     render();
   } catch (error) {
     Object.assign(ticket, ticketSnapshot);
