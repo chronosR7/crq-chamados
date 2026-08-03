@@ -470,6 +470,17 @@ function ticketRequiresReopen(ticket: Ticket) {
   return ticket.status === "solucionado" || ticket.status === "fechado";
 }
 
+function invalidCredentialsMessage(email: string) {
+  const knownUser = data.users.find((user) => user.email.toLowerCase() === email);
+  if (!knownUser) {
+    return "Não encontramos uma conta ativa para este e-mail. Crie sua conta ou solicite o cadastro à TIC.";
+  }
+  if (knownUser.active === false || knownUser.pendingApproval) {
+    return "Esta conta ainda não está liberada para acesso. Aguarde a aprovação ou fale com a TIC.";
+  }
+  return "E-mail cadastrado, mas a senha não confere. Use a senha temporária mais recente ou peça para a TIC gerar uma nova senha.";
+}
+
 function nextTicketId() {
   if (!data.tickets.length) return 1;
   return Math.max(0, ...data.tickets.map((t) => t.id)) + 1;
@@ -3478,9 +3489,9 @@ async function handleLogin(event: SubmitEvent) {
           } else if (msg.includes("rate") || code.includes("rate_limit")) {
             errorEl.textContent = "Muitas tentativas de acesso. Aguarde alguns minutos e tente novamente.";
           } else if (code === "invalid_credentials" || msg.includes("invalid login credentials")) {
-            errorEl.textContent = "O Supabase recusou as credenciais (invalid_credentials). Confirme o e-mail e gere uma nova senha temporária pela TIC.";
+            errorEl.textContent = invalidCredentialsMessage(email);
           } else {
-            errorEl.textContent = `O Supabase recusou o acesso${code ? ` (${code})` : ""}: ${error.message}`;
+            errorEl.textContent = "Não foi possível entrar. Verifique os dados e tente novamente.";
           }
           errorEl.style.color = "#dc3545";
         }
