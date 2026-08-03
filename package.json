@@ -1,0 +1,28 @@
+{
+  "name": "crq-chamados",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "check": "tsc --noEmit --noUnusedLocals --noUnusedParameters && vitest run"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.111.0",
+    "bulma": "^1.0.4",
+    "docx": "^9.7.1",
+    "lucide": "^0.468.0"
+  },
+  "devDependencies": {
+    "supabase": "^2.111.0",
+    "typescript": "^5.6.3",
+    "vite": "^8.1.4",
+    "vitest": "^4.1.10"
+  }
+}

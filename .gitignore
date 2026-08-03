@@ -1,0 +1,17 @@
+# Credenciais e configurações locais
+.env
+.env.*
+!.env.example
+
+# Dependências e artefatos gerados
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Ferramentas locais
+.idea/
+.vscode/
+.DS_Store
+*.log
+supabase/.temp/
