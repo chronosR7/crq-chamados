@@ -2062,3 +2062,83 @@ i[data-lucide="inbox"]::before {
     background: var(--surface-soft);
   }
 }
+
+/* Solved ticket flow */
+button:disabled,
+select:disabled,
+textarea:disabled,
+input:disabled,
+.ticket-action[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.48;
+  filter: grayscale(1);
+}
+
+.solved-actions {
+  position: relative;
+}
+
+.solved-notice {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--muted);
+  background: var(--surface-soft);
+}
+
+.solved-notice strong {
+  color: var(--brand-strong);
+}
+
+.reopen-action {
+  opacity: 1;
+  filter: none;
+}
+
+.system-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(12, 22, 31, 0.42);
+}
+
+.system-modal {
+  display: grid;
+  gap: 12px;
+  width: min(440px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.system-modal h2,
+.system-modal p {
+  margin: 0;
+}
+
+.system-modal h2 {
+  color: var(--brand-strong);
+  font-size: 22px;
+  font-weight: 500;
+}
+
+.system-modal p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}

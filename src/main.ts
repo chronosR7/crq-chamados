@@ -101,6 +101,7 @@ interface RuntimeState {
   selectedTicketId?: number;
   ticketDetailOpen: boolean;
   ticketDetailWidth: number;
+  confirmReopenTicketId?: number;
   filters: Filters;
 }
 
@@ -162,6 +163,7 @@ const state: RuntimeState = {
   view: "dashboard",
   ticketDetailOpen: false,
   ticketDetailWidth: 430,
+  confirmReopenTicketId: undefined,
   filters: {
     status: "todos",
     search: "",
@@ -690,6 +692,30 @@ function renderShell(user: User) {
           ${renderView(user)}
         </section>
       </main>
+    </div>
+    ${renderReopenModal(user)}
+  `;
+}
+
+function renderReopenModal(user: User) {
+  if (!state.confirmReopenTicketId) return "";
+  const ticket = data.tickets.find((candidate) => candidate.id === state.confirmReopenTicketId);
+  if (!ticket || !canSeeTicket(user, ticket)) return "";
+
+  return `
+    <div class="system-modal-backdrop" role="presentation">
+      <section class="system-modal" role="dialog" aria-modal="true" aria-labelledby="reopen-title">
+        <span class="section-kicker">Confirmação</span>
+        <h2 id="reopen-title">Reabrir chamado #${ticket.id}?</h2>
+        <p>O chamado voltará para a fila da TIC como <strong>Novo</strong>. Os botões de atendimento serão liberados novamente.</p>
+        <div class="modal-actions">
+          <button id="cancel-reopen-ticket" class="ghost-button" type="button">Cancelar</button>
+          <button id="confirm-reopen-ticket" class="primary-button" type="button">
+            <i data-lucide="rotate-ccw"></i>
+            Reabrir chamado
+          </button>
+        </div>
+      </section>
     </div>
   `;
 }
@@ -1248,7 +1274,7 @@ function renderTicketDetail(ticket: Ticket, user: User) {
       </div>
     </div>
 
-    ${user.role === "tic" ? renderTicActions(ticket) : ""}
+    ${user.role === "tic" ? renderTicActionsV2(ticket) : ""}
 
     <form id="comment-form" class="comment-form">
       <label>
@@ -1320,6 +1346,68 @@ function renderTicActions(ticket: Ticket) {
           <i data-lucide="trash-2"></i>
           Excluir
         </button>
+      </div>
+    </div>
+  `;
+}
+
+function renderTicActionsV2(ticket: Ticket) {
+  const ticUsers = data.users.filter((user) => user.role === "tic" && user.active);
+  const solved = ticket.status === "solucionado";
+  const disabledAttr = solved ? "disabled aria-disabled=\"true\"" : "";
+
+  return `
+    <div class="tic-actions ${solved ? "solved-actions" : ""}">
+      ${solved ? `
+        <div class="solved-notice">
+          <strong>Chamado solucionado</strong>
+          <span>As ações ficam bloqueadas até a reabertura.</span>
+        </div>
+      ` : ""}
+      <label>
+        Responsável
+        <select id="ticket-assignee" ${solved ? "disabled" : ""}>
+          <option value="">Fila TIC</option>
+          ${ticUsers.map((user) => `<option value="${user.id}" ${ticket.assignedId === user.id ? "selected" : ""}>${escapeHtml(user.fullName)}</option>`).join("")}
+        </select>
+      </label>
+      <label>
+        Prioridade
+        <select id="ticket-priority" ${solved ? "disabled" : ""}>
+          ${Object.entries(priorityLabels).map(([priority, label]) => `<option value="${priority}" ${ticket.priority === priority ? "selected" : ""}>${label}</option>`).join("")}
+        </select>
+      </label>
+      <div class="action-row">
+        <button class="secondary-button ticket-action" type="button" data-action="start" ${disabledAttr}>
+          <i data-lucide="play"></i>
+          Inicializar
+        </button>
+        <button class="secondary-button ticket-action" type="button" data-action="plan" ${disabledAttr}>
+          <i data-lucide="calendar-clock"></i>
+          Planejar
+        </button>
+        <button class="secondary-button ticket-action" type="button" data-action="pend" ${disabledAttr}>
+          <i data-lucide="circle-help"></i>
+          Pendenciar
+        </button>
+        <button class="secondary-button ticket-action" type="button" data-action="solve" ${disabledAttr}>
+          <i data-lucide="circle-check"></i>
+          Solucionar
+        </button>
+        <button class="secondary-button ticket-action" type="button" data-action="close" ${disabledAttr}>
+          <i data-lucide="archive"></i>
+          Fechar
+        </button>
+        <button class="danger-button ticket-action" type="button" data-action="delete" ${disabledAttr}>
+          <i data-lucide="trash-2"></i>
+          Excluir
+        </button>
+        ${solved ? `
+          <button class="primary-button ticket-action reopen-action" type="button" data-action="reopen-request">
+            <i data-lucide="rotate-ccw"></i>
+            Reabrir chamado
+          </button>
+        ` : ""}
       </div>
     </div>
   `;
@@ -1669,6 +1757,15 @@ function bindEvents() {
     render();
   });
 
+  document.querySelector<HTMLButtonElement>("#cancel-reopen-ticket")?.addEventListener("click", () => {
+    state.confirmReopenTicketId = undefined;
+    render();
+  });
+
+  document.querySelector<HTMLButtonElement>("#confirm-reopen-ticket")?.addEventListener("click", () => {
+    confirmReopenTicket();
+  });
+
   document.querySelectorAll<HTMLElement>("[data-open-ticket]").forEach((item) => {
     item.addEventListener("click", () => openTicket(Number(item.dataset.openTicket)));
     item.addEventListener("keydown", (event) => {
@@ -1945,7 +2042,16 @@ function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => void) {
 }
 
 function handleTicketAction(action: string) {
+  if (action === "reopen-request") {
+    const ticket = data.tickets.find((candidate) => candidate.id === state.selectedTicketId);
+    if (!ticket || ticket.status !== "solucionado") return;
+    state.confirmReopenTicketId = ticket.id;
+    render();
+    return;
+  }
+
   updateSelectedTicket((ticket, user) => {
+    if (ticket.status === "solucionado") return;
     const timestamp = nowIso();
     const updates: Record<string, { status: TicketStatus; type: string; message: string }> = {
       start: { status: "atribuido", type: "Inicialização", message: "TIC inicializou o atendimento do chamado." },
@@ -1967,6 +2073,38 @@ function handleTicketAction(action: string) {
     ticket.events.push(createEvent(user.id, update.type, update.message, timestamp));
     notifyTicket(ticket, `Chamado #${ticket.id}: ${update.type}`, update.message);
   });
+}
+
+function confirmReopenTicket() {
+  const user = currentUser();
+  const ticket = data.tickets.find((candidate) => candidate.id === state.confirmReopenTicketId);
+  if (!user || user.role !== "tic" || !ticket || ticket.status !== "solucionado") {
+    state.confirmReopenTicketId = undefined;
+    render();
+    return;
+  }
+
+  const timestamp = nowIso();
+  const sla = slaFor(ticket.priority);
+  ticket.status = "novo";
+  ticket.assignedId = undefined;
+  ticket.responseStartedAt = undefined;
+  ticket.solvedAt = undefined;
+  ticket.closedAt = undefined;
+  ticket.updatedAt = timestamp;
+  ticket.responseDueAt = addHours(new Date(timestamp), sla.responseHours);
+  ticket.solutionDueAt = addHours(new Date(timestamp), sla.solutionHours);
+  ticket.events.push(createEvent(user.id, "Reabertura", "Chamado reaberto e devolvido para a fila TIC.", timestamp));
+
+  state.confirmReopenTicketId = undefined;
+  state.selectedTicketId = ticket.id;
+  state.ticketDetailOpen = true;
+  state.view = "tickets";
+  state.filters.status = "novo";
+
+  notifyTicket(ticket, `Chamado #${ticket.id} reaberto`, "O chamado foi reaberto e voltou para a fila TIC.");
+  saveData();
+  render();
 }
 
 function bindUserForms() {
