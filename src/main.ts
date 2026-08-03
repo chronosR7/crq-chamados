@@ -525,6 +525,10 @@ function ticketIsCritical(ticket: Ticket) {
   return active && (ticket.priority === "critica" || progress.responseProgress >= 85 || progress.solutionProgress >= 85);
 }
 
+function isTicketReopenable(ticket: Ticket) {
+  return ticket.status === "solucionado" || ticket.status === "fechado";
+}
+
 function nextTicketId() {
   return Math.max(1200, ...data.tickets.map((ticket) => ticket.id)) + 1;
 }
@@ -1353,27 +1357,28 @@ function renderTicActions(ticket: Ticket) {
 
 function renderTicActionsV2(ticket: Ticket) {
   const ticUsers = data.users.filter((user) => user.role === "tic" && user.active);
-  const solved = ticket.status === "solucionado";
-  const disabledAttr = solved ? "disabled aria-disabled=\"true\"" : "";
+  const reopenLocked = isTicketReopenable(ticket);
+  const lockedLabel = ticket.status === "fechado" ? "Chamado fechado" : "Chamado solucionado";
+  const disabledAttr = reopenLocked ? "disabled aria-disabled=\"true\"" : "";
 
   return `
-    <div class="tic-actions ${solved ? "solved-actions" : ""}">
-      ${solved ? `
+    <div class="tic-actions ${reopenLocked ? "solved-actions" : ""}">
+      ${reopenLocked ? `
         <div class="solved-notice">
-          <strong>Chamado solucionado</strong>
+          <strong>${lockedLabel}</strong>
           <span>As ações ficam bloqueadas até a reabertura.</span>
         </div>
       ` : ""}
       <label>
         Responsável
-        <select id="ticket-assignee" ${solved ? "disabled" : ""}>
+        <select id="ticket-assignee" ${reopenLocked ? "disabled" : ""}>
           <option value="">Fila TIC</option>
           ${ticUsers.map((user) => `<option value="${user.id}" ${ticket.assignedId === user.id ? "selected" : ""}>${escapeHtml(user.fullName)}</option>`).join("")}
         </select>
       </label>
       <label>
         Prioridade
-        <select id="ticket-priority" ${solved ? "disabled" : ""}>
+        <select id="ticket-priority" ${reopenLocked ? "disabled" : ""}>
           ${Object.entries(priorityLabels).map(([priority, label]) => `<option value="${priority}" ${ticket.priority === priority ? "selected" : ""}>${label}</option>`).join("")}
         </select>
       </label>
@@ -1402,7 +1407,7 @@ function renderTicActionsV2(ticket: Ticket) {
           <i data-lucide="trash-2"></i>
           Excluir
         </button>
-        ${solved ? `
+        ${reopenLocked ? `
           <button class="primary-button ticket-action reopen-action" type="button" data-action="reopen-request">
             <i data-lucide="rotate-ccw"></i>
             Reabrir chamado
@@ -2044,14 +2049,14 @@ function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => void) {
 function handleTicketAction(action: string) {
   if (action === "reopen-request") {
     const ticket = data.tickets.find((candidate) => candidate.id === state.selectedTicketId);
-    if (!ticket || ticket.status !== "solucionado") return;
+    if (!ticket || !isTicketReopenable(ticket)) return;
     state.confirmReopenTicketId = ticket.id;
     render();
     return;
   }
 
   updateSelectedTicket((ticket, user) => {
-    if (ticket.status === "solucionado") return;
+    if (isTicketReopenable(ticket)) return;
     const timestamp = nowIso();
     const updates: Record<string, { status: TicketStatus; type: string; message: string }> = {
       start: { status: "atribuido", type: "Inicialização", message: "TIC inicializou o atendimento do chamado." },
@@ -2078,7 +2083,7 @@ function handleTicketAction(action: string) {
 function confirmReopenTicket() {
   const user = currentUser();
   const ticket = data.tickets.find((candidate) => candidate.id === state.confirmReopenTicketId);
-  if (!user || user.role !== "tic" || !ticket || ticket.status !== "solucionado") {
+  if (!user || user.role !== "tic" || !ticket || !isTicketReopenable(ticket)) {
     state.confirmReopenTicketId = undefined;
     render();
     return;
