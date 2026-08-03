@@ -267,19 +267,9 @@ export async function saveDataToSupabase(data: AppData) {
       if (eventsError) throw new Error(`Não foi possível sincronizar o histórico: ${eventsError.message}`);
     }
 
-    if (data.notifications.length) {
-      const { error: notificationsError } = await supabase.from('notifications').upsert(data.notifications.map(n => ({
-        id: n.id,
-        user_id: n.userId,
-        ticket_id: n.ticketId || null,
-        channel: toSupabaseChannel(n.channel),
-        title: n.title,
-        body: n.body,
-        read: n.read,
-        created_at: n.createdAt
-      })), { onConflict: 'id', ignoreDuplicates: true });
-      if (notificationsError) throw new Error(`Não foi possível sincronizar as notificações: ${notificationsError.message}`);
-    }
+    // Notificações têm fluxo próprio: criação pontual, marcação como lida e exclusão.
+    // Reenviar a lista inteira aqui pode tentar recriar avisos antigos ligados a
+    // chamados já removidos, violando a chave estrangeira notifications.ticket_id.
 }
 
 function ticketPayload(ticket: Ticket) {
