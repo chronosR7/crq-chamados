@@ -171,18 +171,23 @@ export async function loadDataFromSupabase(): Promise<AppData | null> {
     }, {});
 
     const attachmentsByTicket: Record<number, Attachment[]> = {};
-    for (const a of ticketAttachments ?? []) {
+    const signedAttachments = await Promise.all((ticketAttachments ?? []).map(async (a: any) => {
       const { data: signed } = await supabase.storage.from('ticket-attachments').createSignedUrl(a.storage_path, 3600);
       const ticketId = Number(a.ticket_id);
-      if (!attachmentsByTicket[ticketId]) attachmentsByTicket[ticketId] = [];
-      attachmentsByTicket[ticketId].push({
+      const attachment: Attachment = {
         id: a.id,
         name: a.file_name,
         size: a.file_size_bytes,
         url: signed?.signedUrl || undefined,
         type: a.mime_type || undefined,
         eventId: a.event_id || undefined
-      });
+      };
+      return { ticketId, attachment };
+    }));
+
+    for (const { ticketId, attachment } of signedAttachments) {
+      if (!attachmentsByTicket[ticketId]) attachmentsByTicket[ticketId] = [];
+      attachmentsByTicket[ticketId].push(attachment);
     }
     const ticketsMapped: Ticket[] = (tickets ?? []).map((t: any) => ({
       id: t.id,

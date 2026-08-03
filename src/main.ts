@@ -3365,8 +3365,8 @@ async function handleLogin(event: SubmitEvent) {
     setCurrentUserId(userId);
     state.authMode = "login";
     state.loginRole = "usuario";
-    await startRealtime(createdUser);
     render();
+    void startRealtime(createdUser);
     showWelcomeScreen(createdUser);
     return;
   }
@@ -3528,7 +3528,7 @@ async function handleLogin(event: SubmitEvent) {
   }
 
   setCurrentUserId(user.id);
-  await startRealtime(user);
+  void startRealtime(user);
 
   const userObj = currentUser();
   if (userObj) {
@@ -4030,7 +4030,6 @@ function keepTicketInFocus(ticket: Ticket) {
   state.view = "tickets";
   state.selectedTicketId = ticket.id;
   state.ticketDetailOpen = ticket.status !== "excluido";
-  state.filters.status = ticket.status === "excluido" ? "todos" : ticket.status;
 }
 
 function handleTicketAction(action: string) {
@@ -5308,7 +5307,10 @@ function showTemporaryPasswordModal(password: string, title: string) {
 // ===== INICIALIZAÇÃO =====
 async function init() {
   // Dados operacionais são carregados exclusivamente do Supabase.
-  const supabaseData = await loadDataFromSupabase();
+  const [supabaseData, remoteTutorials] = await Promise.all([
+    loadDataFromSupabase(),
+    loadKnowledgeTutorials()
+  ]);
 
   if (supabaseData) {
     data = supabaseData;
@@ -5316,13 +5318,12 @@ async function init() {
     devWarn('Não foi possível carregar os dados do Supabase. O modo local está desativado.');
   }
 
-  const remoteTutorials = await loadKnowledgeTutorials();
   if (remoteTutorials.length) knowledgeTutorials = remoteTutorials;
 
   ensureSeedData();
   await restoreSession();
   const restoredUser = currentUser();
-  if (restoredUser) await startRealtime(restoredUser);
+  if (restoredUser) void startRealtime(restoredUser);
   restoreViewState();
 
   // Preferências visuais ficam no navegador; os dados operacionais vêm do Supabase.
