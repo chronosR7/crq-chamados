@@ -1882,6 +1882,7 @@ function renderTicActions(ticket: Ticket) {
   const ticUsers = data.users.filter((u) => u.role === "tic" && u.active);
   const reopenLocked = ticketRequiresReopen(ticket);
   const lockedAttr = reopenLocked ? "disabled aria-disabled=\"true\"" : "";
+  const startDisabledAttr = reopenLocked || ticket.status !== "novo" ? "disabled aria-disabled=\"true\"" : "";
   const lockedLabel = ticket.status === "fechado" ? "Chamado fechado" : "Chamado solucionado";
   return `
     <div class="tic-actions ${reopenLocked ? "ticket-locked" : ""}">
@@ -1905,7 +1906,7 @@ function renderTicActions(ticket: Ticket) {
         </select>
       </label>
       <div class="action-row">
-        <button class="secondary-button ticket-action" type="button" data-action="start" ${lockedAttr}>
+        <button class="secondary-button ticket-action" type="button" data-action="start" ${startDisabledAttr}>
           <i data-lucide="play"></i>
           Inicializar
         </button>
@@ -4065,6 +4066,7 @@ function handleTicketAction(action: string) {
   }
 
   if (ticketRequiresReopen(ticket)) return;
+  if (action === "start" && ticket.status !== "novo") return;
 
   if (action === "delete") {
     showSystemConfirm(`Tem certeza que deseja excluir o chamado #${ticket.id}? Ele será movido para a lixeira.`, () => {

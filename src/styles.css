@@ -2616,6 +2616,16 @@ td small {
   cursor: pointer;
 }
 
+.ticket-action:disabled {
+  color: #7c8794 !important;
+  background: #edf1f4 !important;
+  border-color: #d8e0e7 !important;
+  box-shadow: none !important;
+  filter: grayscale(1);
+  opacity: 0.66;
+  cursor: not-allowed;
+}
+
 .comment-form {
   margin-bottom: 16px;
 }
