@@ -5254,6 +5254,12 @@ function showSystemConfirm(message: string, onConfirm: () => void) {
 
 /** Exibe um pop-up de alerta de sucesso/informação estilo SaaS */
 function showSystemAlert(message: string) {
+  const normalizedMessage = message.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (normalizedMessage.includes("o chamado foi atualizado") && normalizedMessage.includes("sincronizad")) {
+    devWarn("Alerta auxiliar suprimido:", message);
+    return;
+  }
+
   const overlay = document.createElement("div");
   overlay.className = "system-modal-overlay";
   overlay.innerHTML = `
