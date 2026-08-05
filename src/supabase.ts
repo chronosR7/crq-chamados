@@ -341,20 +341,20 @@ export async function completeOwnProfileInSupabase(input: {
 
 export async function createTicketEventInSupabase(ticketId: number, event: TicketEvent) {
   if (!supabase) throw new Error('Supabase não configurado.');
-  const { error } = await supabase.from('ticket_events').insert({
+  const { error } = await supabase.from('ticket_events').upsert({
     id: event.id,
     ticket_id: ticketId,
     actor_id: event.actorId,
     event_type: event.type,
     message: event.message,
     created_at: event.createdAt
-  });
+  }, { onConflict: 'id', ignoreDuplicates: true });
   if (error) throw new Error(error.message);
 }
 
 export async function createNotificationsInSupabase(notifications: NotificationItem[]) {
   if (!supabase || notifications.length === 0) return;
-  const { error } = await supabase.from('notifications').insert(notifications.map((notification) => ({
+  const { error } = await supabase.from('notifications').upsert(notifications.map((notification) => ({
     id: notification.id,
     user_id: notification.userId,
     ticket_id: notification.ticketId || null,
@@ -363,7 +363,7 @@ export async function createNotificationsInSupabase(notifications: NotificationI
     body: notification.body,
     read: false,
     created_at: notification.createdAt
-  })));
+  })), { onConflict: 'id', ignoreDuplicates: true });
   if (error) throw new Error(error.message);
 }
 

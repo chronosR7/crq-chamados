@@ -4003,13 +4003,11 @@ async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => voi
       // Chamado, histórico e notificações são tabelas diferentes. Depois que a
       // alteração principal foi aceita, uma falha secundária não pode fazer a
       // interface fingir que o chamado voltou ao estado anterior.
-      let auxiliarySyncFailed = false;
       const newEvents = ticket.events.filter((event) => !eventIdsBefore.has(event.id));
       for (const event of newEvents) {
         try {
           await createTicketEventInSupabase(ticket.id, event);
         } catch (eventError) {
-          auxiliarySyncFailed = true;
           devWarn("Chamado atualizado, mas o histórico não foi sincronizado:", eventError);
         }
       }
@@ -4020,12 +4018,8 @@ async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => voi
       try {
         await createNotificationsInSupabase(newNotifications);
       } catch (notificationError) {
-        auxiliarySyncFailed = true;
         devWarn("Chamado atualizado, mas as notificações não foram entregues:", notificationError);
         data.notifications = data.notifications.filter((notification) => notificationIdsBefore.has(notification.id));
-      }
-      if (auxiliarySyncFailed) {
-        showSystemAlert("O chamado foi atualizado, mas parte do histórico ou das notificações não pôde ser sincronizada.");
       }
     }
     render();
