@@ -4027,6 +4027,38 @@ td {
   margin-top: 4px;
 }
 
+.pending-ticket-modal {
+  max-width: 440px;
+  align-items: center;
+  text-align: center;
+}
+
+.pending-ticket-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--brand);
+  background: var(--brand-light);
+}
+
+.pending-ticket-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.pending-ticket-modal h2 {
+  margin: -8px 0 0;
+  color: var(--text);
+  font-size: 1.2rem;
+  font-weight: 650;
+}
+
+.pending-ticket-modal .system-modal-actions {
+  justify-content: center;
+}
+
 @keyframes slide-up {
   from { opacity: 0; }
   to   { opacity: 1; }

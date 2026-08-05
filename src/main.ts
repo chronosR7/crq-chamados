@@ -226,6 +226,8 @@ let state: RuntimeState = { ...defaultState, filters: { ...defaultState.filters 
 let realtimeChannel: any = null;
 const onlineUserIds = new Set<string>();
 let realtimeRefreshTimer: number | undefined;
+let pendingPopupUserId: string | undefined;
+let seenPendingPopupNotificationIds = new Set<string>();
 
 async function refreshFromServer() {
   const remote = await loadDataFromSupabase();
@@ -238,6 +240,7 @@ async function refreshFromServer() {
     state.ticketDetailOpen = false;
   }
   render();
+  showNewPendingRequesterPopups();
 }
 
 function scheduleRealtimeRefresh() {
@@ -366,6 +369,10 @@ function escapeHtml(value: string) {
     };
     return entities[char];
   });
+}
+
+function normalizeText(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 }
 
 /* Funções para sincronizar dados com o backend Supabase */
@@ -517,6 +524,93 @@ function notifyTicket(ticket: Ticket, title: string, body: string, includeTic = 
     if (notification) created.push(notification);
   });
   return created;
+}
+
+function isPendingNotificationForRequester(notification: NotificationItem, user: User) {
+  if (notification.userId !== user.id || !notification.ticketId) return false;
+  const ticket = data.tickets.find((item) => item.id === notification.ticketId);
+  if (!ticket || ticket.requesterId !== user.id) return false;
+
+  const title = normalizeText(notification.title);
+  const body = normalizeText(notification.body);
+  return title.includes("pendencia no chamado") || body.includes("motivo da pendencia");
+}
+
+function rememberCurrentPendingPopupNotifications(user = currentUser()) {
+  if (!user) return;
+  pendingPopupUserId = user.id;
+  seenPendingPopupNotificationIds = new Set(
+    data.notifications
+      .filter((notification) => notification.userId === user.id)
+      .map((notification) => notification.id)
+  );
+}
+
+function showNewPendingRequesterPopups() {
+  const user = currentUser();
+  if (!user) return;
+
+  if (pendingPopupUserId !== user.id) {
+    rememberCurrentPendingPopupNotifications(user);
+    return;
+  }
+
+  const newPendingNotifications = data.notifications
+    .filter((notification) => !seenPendingPopupNotificationIds.has(notification.id))
+    .filter((notification) => isPendingNotificationForRequester(notification, user))
+    .sort((first, second) => new Date(first.createdAt).getTime() - new Date(second.createdAt).getTime());
+
+  data.notifications
+    .filter((notification) => notification.userId === user.id)
+    .forEach((notification) => seenPendingPopupNotificationIds.add(notification.id));
+
+  if (newPendingNotifications.length) {
+    showPendingTicketPopup(newPendingNotifications);
+  }
+}
+
+function showPendingTicketPopup(notifications: NotificationItem[]) {
+  const ticketIds = Array.from(new Set(
+    notifications
+      .map((notification) => notification.ticketId)
+      .filter((ticketId): ticketId is number => typeof ticketId === "number")
+  ));
+  if (!ticketIds.length) return;
+
+  const firstTicketId = ticketIds[0];
+  const message = ticketIds.length === 1
+    ? `O chamado #${firstTicketId} tem uma pendência registrada.`
+    : `Os chamados ${ticketIds.map((ticketId) => `#${ticketId}`).join(", ")} têm pendências registradas.`;
+
+  const overlay = document.createElement("div");
+  overlay.className = "system-modal-overlay pending-ticket-overlay";
+  overlay.innerHTML = `
+    <div class="system-modal pending-ticket-modal" role="dialog" aria-modal="true" aria-labelledby="pending-ticket-title">
+      <div class="pending-ticket-icon">
+        <i data-lucide="circle-help"></i>
+      </div>
+      <span class="section-kicker">Pendência</span>
+      <h2 id="pending-ticket-title">Ação necessária</h2>
+      <p class="system-modal-text">${escapeHtml(message)}</p>
+      <div class="system-modal-actions">
+        <button id="pending-ticket-dismiss" class="ghost-button" type="button">Depois</button>
+        <button id="pending-ticket-open" class="primary-button" type="button">Ver chamado</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  createIcons({ icons: usedIcons, nameAttr: "data-lucide" });
+
+  const close = () => {
+    overlay.style.animation = "fade-out 0.2s ease forwards";
+    setTimeout(() => overlay.remove(), 200);
+  };
+
+  overlay.querySelector<HTMLButtonElement>("#pending-ticket-dismiss")?.addEventListener("click", close);
+  overlay.querySelector<HTMLButtonElement>("#pending-ticket-open")?.addEventListener("click", () => {
+    overlay.remove();
+    openTicket(firstTicketId);
+  });
 }
 
 function notifyCommentAdded(ticket: Ticket, text: string) {
@@ -3280,6 +3374,7 @@ async function handleLogin(event: SubmitEvent) {
         });
       }
       setCurrentUserId(userId);
+      rememberCurrentPendingPopupNotifications(existing);
       state.authMode = "login";
       showSystemAlert("Senha alterada com sucesso! Seu novo acesso foi ativado.");
       render();
@@ -3375,6 +3470,7 @@ async function handleLogin(event: SubmitEvent) {
       return;
     }
     setCurrentUserId(userId);
+    rememberCurrentPendingPopupNotifications(createdUser);
     state.authMode = "login";
     state.loginRole = "usuario";
     render();
@@ -3540,6 +3636,7 @@ async function handleLogin(event: SubmitEvent) {
   }
 
   setCurrentUserId(user.id);
+  rememberCurrentPendingPopupNotifications(user);
   void startRealtime(user);
 
   const userObj = currentUser();
@@ -4722,7 +4819,11 @@ window.addEventListener("popstate", () => {
 });
 
 function setCurrentUserId(userId: string | undefined) {
-  if (state.currentUserId !== userId) state.editingUserId = undefined;
+  if (state.currentUserId !== userId) {
+    state.editingUserId = undefined;
+    pendingPopupUserId = undefined;
+    seenPendingPopupNotificationIds = new Set<string>();
+  }
   state.currentUserId = userId;
 }
 
@@ -5337,7 +5438,10 @@ async function init() {
   ensureSeedData();
   await restoreSession();
   const restoredUser = currentUser();
-  if (restoredUser) void startRealtime(restoredUser);
+  if (restoredUser) {
+    rememberCurrentPendingPopupNotifications(restoredUser);
+    void startRealtime(restoredUser);
+  }
   restoreViewState();
 
   // Preferências visuais ficam no navegador; os dados operacionais vêm do Supabase.
