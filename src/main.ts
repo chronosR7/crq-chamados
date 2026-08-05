@@ -3980,7 +3980,7 @@ function bindTicketForms() {
   });
 }
 
-async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => void) {
+async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => void, options: { successMessage?: string } = {}) {
   const user = currentUser();
   const ticket = data.tickets.find((t) => t.id === state.selectedTicketId);
   if (!user || !ticket) return;
@@ -4023,6 +4023,7 @@ async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => voi
       }
     }
     render();
+    if (options.successMessage) showSystemAlert(options.successMessage);
   } catch (error) {
     Object.assign(ticket, ticketSnapshot);
     data.notifications = data.notifications.filter((notification) => notificationIdsBefore.has(notification.id));
@@ -4181,7 +4182,7 @@ function handleTicketAction(action: string) {
     t.events.push({ id: makeId("evt"), actorId: user.id, type: update.type, message: update.message, createdAt: timestamp });
     notifyTicket(t, `Chamado #${t.id}: ${update.type}`, update.message);
     keepTicketInFocus(t);
-  });
+  }, { successMessage: action === "start" ? "Tarefa inicializada com sucesso." : undefined });
 }
 
 // ===== USER FORMS =====
