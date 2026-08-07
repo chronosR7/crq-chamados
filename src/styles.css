@@ -8365,3 +8365,146 @@ table tbody tr:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* 44. Login accessibility: zoom/reflow support */
+.login-page {
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-width: auto;
+  -ms-overflow-style: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.login-page::-webkit-scrollbar,
+.login-card::-webkit-scrollbar {
+  display: block;
+  width: 12px;
+  height: 12px;
+}
+
+.login-page::-webkit-scrollbar-thumb,
+.login-card::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand) 42%, transparent);
+  background-clip: content-box;
+}
+
+.login-page,
+.login-brand,
+.login-panel,
+.login-card,
+.login-form,
+.login-form label,
+.password-input-wrap {
+  min-width: 0;
+}
+
+.login-card {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.login-form .inline-link {
+  min-height: 44px;
+  min-width: min(100%, 160px);
+  white-space: normal;
+  text-align: center;
+}
+
+.login-secondary-actions {
+  flex-wrap: wrap;
+}
+
+.login-role-selector {
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+}
+
+.login-role-selector .login-role-button {
+  min-width: 0;
+  white-space: normal;
+}
+
+@media (max-width: 1100px), (max-height: 760px) {
+  .login-page {
+    display: block !important;
+    padding: 72px clamp(12px, 4vw, 28px) 32px !important;
+  }
+
+  .login-visual-fx,
+  .login-orb,
+  .login-page::before,
+  .login-page::after {
+    animation: none !important;
+  }
+
+  .login-brand {
+    display: none !important;
+  }
+
+  .login-panel {
+    display: block !important;
+    width: 100%;
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
+
+  .login-card {
+    width: min(100%, 560px) !important;
+    max-width: 560px !important;
+    margin: 0 auto !important;
+    padding: clamp(20px, 4vw, 32px) !important;
+    transform: none !important;
+  }
+
+  .login-form {
+    gap: clamp(12px, 2.8vh, 18px);
+  }
+
+  .login-secondary-actions,
+  .login-form > div:has(.inline-link) {
+    flex-wrap: wrap;
+  }
+
+  .login-form .inline-link {
+    flex: 1 1 180px;
+  }
+
+  .login-theme-toggle {
+    position: fixed !important;
+    top: 12px !important;
+    right: 12px !important;
+  }
+}
+
+@media (max-width: 520px), (max-height: 560px) {
+  .login-page {
+    padding: 64px 10px 22px !important;
+  }
+
+  .login-card {
+    padding: 18px 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .login-role-selector {
+    grid-template-columns: 1fr;
+  }
+
+  .manager-access-note {
+    padding: 10px 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-page *,
+  .login-page::before,
+  .login-page::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

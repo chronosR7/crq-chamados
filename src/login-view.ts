@@ -128,7 +128,7 @@ export function renderLoginView(_data: AppData, authMode: AuthMode, loginRole: R
               ${submitLabel}
             </button>
             ${authMode === 'login' ? `
-              <div style="display: flex; justify-content: flex-start; gap: 8px; margin-top: 4px;">
+              <div class="login-secondary-actions" style="display: flex; justify-content: flex-start; gap: 8px; margin-top: 4px;">
                 <button class="ghost-button inline-link" type="button" data-auth-mode="reset">
                   <i data-lucide="key-round"></i> Esqueci a senha
                 </button>
