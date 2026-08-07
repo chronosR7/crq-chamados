@@ -170,7 +170,7 @@ const app = document.querySelector<HTMLDivElement>("#app");
 // Textos amigáveis para exibir status, prioridades e perfis
 const statusLabels: Record<TicketStatus, string> = {
   novo: "Novo",
-  atribuido: "Em atendimento (Atribuído)",
+  atribuido: "Inicializado",
   planejado: "Agendado",
   pendente: "Pendente",
   solucionado: "Solucionado",
@@ -228,6 +228,7 @@ const onlineUserIds = new Set<string>();
 let realtimeRefreshTimer: number | undefined;
 let pendingPopupUserId: string | undefined;
 let seenPendingPopupNotificationIds = new Set<string>();
+let scheduledTicketsCheckInFlight = false;
 
 async function refreshFromServer() {
   const remote = await loadDataFromSupabase();
@@ -5325,6 +5326,81 @@ function checkScheduledTickets() {
   });
 }
 
+void checkScheduledTickets;
+
+async function autoStartDueScheduledTickets() {
+  const user = currentUser();
+  if (user?.role !== "tic" || scheduledTicketsCheckInFlight) return;
+
+  scheduledTicketsCheckInFlight = true;
+  let changed = false;
+  const now = Date.now();
+
+  try {
+    for (const ticket of data.tickets) {
+      if (!ticket.plannedFor || ticket.status !== "planejado") continue;
+
+      const plannedTime = new Date(ticket.plannedFor).getTime();
+      if (isNaN(plannedTime) || now < plannedTime) continue;
+
+      const ticketSnapshot = JSON.parse(JSON.stringify(ticket)) as Ticket;
+      const notificationIdsBefore = new Set(data.notifications.map((notification) => notification.id));
+      const timestamp = nowIso();
+      const plannedFor = ticket.plannedFor;
+
+      ticket.status = "atribuido";
+      ticket.updatedAt = timestamp;
+      ticket.assignedId = ticket.assignedId ?? user.id;
+      ticket.responseStartedAt = ticket.responseStartedAt ?? timestamp;
+      ticket.plannedNotificationSent = true;
+      ticket.plannedFor = undefined;
+
+      const event: TicketEvent = {
+        id: makeId("evt"),
+        actorId: user.id,
+        type: "Inicialização",
+        message: `Atendimento iniciado automaticamente no horário agendado (${formatDate(plannedFor)}).`,
+        createdAt: timestamp
+      };
+      ticket.events.push(event);
+
+      const createdNotifications = notifyTicket(
+        ticket,
+        `Chamado #${ticket.id}: Inicialização`,
+        `O chamado foi inicializado automaticamente no horário agendado (${formatDate(plannedFor)}).`
+      );
+
+      try {
+        if (isSupabaseConfigured()) {
+          const updated = await updateTicketInSupabase(ticket);
+          if (!updated) throw new Error("O servidor recusou a inicialização automática.");
+          try {
+            await createTicketEventInSupabase(ticket.id, event);
+          } catch (eventError) {
+            devWarn("Chamado inicializado automaticamente, mas o histórico não foi sincronizado:", eventError);
+          }
+          try {
+            await createNotificationsInSupabase(createdNotifications);
+          } catch (notificationError) {
+            devWarn("Chamado inicializado automaticamente, mas as notificações não foram entregues:", notificationError);
+          }
+        } else {
+          await saveData();
+        }
+        changed = true;
+      } catch (error) {
+        Object.assign(ticket, ticketSnapshot);
+        data.notifications = data.notifications.filter((notification) => notificationIdsBefore.has(notification.id));
+        devWarn(`Não foi possível inicializar automaticamente o chamado #${ticket.id}:`, error);
+      }
+    }
+  } finally {
+    scheduledTicketsCheckInFlight = false;
+  }
+
+  if (changed) render();
+}
+
 /** Exibe um pop-up de confirmação de sistema estilo SaaS */
 function showSystemConfirm(message: string, onConfirm: () => void) {
   const overlay = document.createElement("div");
@@ -5436,6 +5512,19 @@ async function init() {
 
   ensureSeedData();
   await restoreSession();
+  const restoredUserId = state.currentUserId;
+  if (restoredUserId) {
+    const authenticatedData = await loadDataFromSupabase();
+    if (authenticatedData) {
+      data = authenticatedData;
+      ensureSeedData();
+      if (data.users.some((user) => user.id === restoredUserId)) {
+        setCurrentUserId(restoredUserId);
+      } else {
+        setCurrentUserId(undefined);
+      }
+    }
+  }
   const restoredUser = currentUser();
   if (restoredUser) {
     rememberCurrentPendingPopupNotifications(restoredUser);
@@ -5455,8 +5544,8 @@ async function init() {
   } catch (err) {}
 
   render();
-  checkScheduledTickets();
-  window.setInterval(checkScheduledTickets, 10000);
+  void autoStartDueScheduledTickets();
+  window.setInterval(() => void autoStartDueScheduledTickets(), 10000);
 }
 
 init();

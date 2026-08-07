@@ -8234,3 +8234,115 @@ table tbody tr:hover {
   .knowledge-editor-actions > button { flex: 1; justify-content: center; }
   .knowledge-editor-actions { bottom: -17px; margin: 14px -13px -17px; padding: 12px 13px; }
 }
+
+/* 43. Production fixes: dark-mode contrast and sidebar overflow */
+[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[data-theme="dark"] textarea,
+[data-theme="dark"] select,
+[data-theme="dark"] .input,
+[data-theme="dark"] .textarea,
+[data-theme="dark"] .select select,
+[data-theme="dark"] .custom-dash-select,
+[data-theme="dark"] .system-modal-prompt input,
+[data-theme="dark"] .system-modal-prompt textarea,
+[data-theme="dark"] .knowledge-editor input:not([type="checkbox"]),
+[data-theme="dark"] .knowledge-editor textarea,
+[data-theme="dark"] .knowledge-editor select {
+  color: var(--text) !important;
+  background: var(--surface-solid) !important;
+  border-color: var(--ui-border-strong) !important;
+  -webkit-text-fill-color: var(--text);
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--text-faint) !important;
+  -webkit-text-fill-color: var(--text-faint);
+}
+
+[data-theme="dark"] select option {
+  color: var(--text);
+  background: var(--surface-solid);
+}
+
+[data-theme="dark"] input:disabled,
+[data-theme="dark"] select:disabled,
+[data-theme="dark"] textarea:disabled,
+[data-theme="dark"] .ticket-action:disabled,
+[data-theme="dark"] .ticket-locked button:disabled,
+[data-theme="dark"] .ticket-locked select:disabled,
+[data-theme="dark"] .ticket-locked textarea:disabled,
+[data-theme="dark"] .ticket-locked input:disabled {
+  color: #78889f !important;
+  background: #1b2537 !important;
+  border-color: #2b3b55 !important;
+  box-shadow: none !important;
+  filter: grayscale(0.35);
+  opacity: 1;
+  -webkit-text-fill-color: #78889f;
+}
+
+[data-theme="dark"] .ticket-locked-notice,
+[data-theme="dark"] .ticket-locked .file-drop-area {
+  color: var(--text-base) !important;
+  background: #172235 !important;
+  border-color: var(--ui-border-strong) !important;
+}
+
+[data-theme="dark"] .ticket-locked-notice strong,
+[data-theme="dark"] .description-block strong,
+[data-theme="dark"] .timeline-item strong,
+[data-theme="dark"] .detail-meta strong {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .ticket-locked-notice span,
+[data-theme="dark"] .description-block p,
+[data-theme="dark"] .timeline-item p,
+[data-theme="dark"] .detail-meta span {
+  color: var(--text-base) !important;
+}
+
+[data-theme="dark"] .empty-state {
+  color: var(--muted) !important;
+  background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
+}
+
+.sidebar-online-widget {
+  min-width: 0;
+  overflow: hidden;
+  flex: 0 1 auto;
+  max-height: clamp(122px, 34vh, 330px);
+}
+
+.sidebar-online-widget.expanded .online-users-wrapper {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.sidebar-online-widget.expanded .online-users-list {
+  max-height: clamp(88px, 27vh, 260px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.online-widget-header,
+.online-widget-header .action-label,
+.online-user-item,
+.online-user-info {
+  min-width: 0;
+}
+
+.online-user-info {
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.online-user-info .online-name,
+.online-user-info .online-role {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
