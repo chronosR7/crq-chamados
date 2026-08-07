@@ -152,6 +152,7 @@ export async function loadDataFromSupabase(): Promise<AppData | null> {
         requestedRole: (u.requested_role as Role) || undefined,
         approvedByTic: approved,
         onboardingCompletedAt: u.onboarding_completed_at || undefined,
+        acknowledgedReleaseVersion: u.acknowledged_release_version || undefined,
         avatarUrl: u.avatar_url || undefined
         ,mustChangePassword: u.must_change_password === true
       };

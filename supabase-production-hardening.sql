@@ -3,6 +3,7 @@
 begin;
 
 alter table public.profiles add column if not exists updated_at timestamptz not null default now();
+alter table public.profiles add column if not exists acknowledged_release_version text;
 alter table public.ticket_attachments add column if not exists event_id uuid references public.ticket_events(id) on delete set null;
 alter table public.ticket_attachments add column if not exists mime_type text;
 alter table public.tickets add column if not exists status_before_delete text;
@@ -153,7 +154,7 @@ create policy profiles_self_update on public.profiles for update to authenticate
 using (id::text = auth.uid()::text and active = true)
 with check (id::text = auth.uid()::text and active = true);
 revoke update on table public.profiles from authenticated;
-grant update (full_name, avatar_url, onboarding_completed_at, must_change_password) on public.profiles to authenticated;
+grant update (full_name, avatar_url, onboarding_completed_at, must_change_password, acknowledged_release_version) on public.profiles to authenticated;
 
 -- 5. Anexos somente em chamados visíveis e ligados ao evento correto.
 drop policy if exists attachments_create_scope on public.ticket_attachments;

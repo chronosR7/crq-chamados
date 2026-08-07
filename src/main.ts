@@ -50,6 +50,7 @@ import {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   SquarePlus,
   Sun,
   TimerReset,
@@ -94,8 +95,10 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
-const APP_VERSION = "1.0";
+const APP_VERSION = "1.1";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.1";
 const THEME_STORAGE_KEY = "crq-theme";
+let releaseNoteShownThisSession = false;
 
 function devWarn(...args: any[]) {
   if (import.meta.env.DEV) console.warn(...args);
@@ -158,6 +161,7 @@ const usedIcons = {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   SquarePlus,
   Sun,
   TimerReset,
@@ -726,6 +730,7 @@ function showWelcomeScreen(user: User) {
     showOnboarding(user);
     return;
   }
+  if (showReleaseNoteIfNeeded(user)) return;
   const overlay = document.createElement('div');
   overlay.className = 'welcome-overlay';
   overlay.innerHTML = `
@@ -788,9 +793,92 @@ function showOnboarding(user: User) {
       }
       await saveDataToAppStorage();
       overlay.remove();
+      showReleaseNoteIfNeeded(user);
     });
   };
   draw();
+}
+
+/** Exibe a documentação da versão e persiste a dispensa no perfil do usuário. */
+function showReleaseNoteIfNeeded(user: User) {
+  if (releaseNoteShownThisSession || user.acknowledgedReleaseVersion === CURRENT_RELEASE_NOTE_VERSION) return false;
+  releaseNoteShownThisSession = true;
+  app?.setAttribute("inert", "");
+
+  // A nota fica acima da troca de senha temporária para preservar a ordem do primeiro acesso.
+  const forcedPassword = document.querySelector<HTMLElement>(".forced-password-overlay");
+  forcedPassword?.setAttribute("inert", "");
+  forcedPassword?.setAttribute("aria-hidden", "true");
+
+  const overlay = document.createElement("div");
+  overlay.className = "release-note-overlay";
+  overlay.innerHTML = `
+    <article class="release-note-modal" role="dialog" aria-modal="true" aria-labelledby="release-note-title" aria-describedby="release-note-summary" tabindex="-1">
+      <header class="release-note-header">
+        <div class="release-note-version"><i data-lucide="sparkles"></i><span>Atualização disponível</span></div>
+        <h2 id="release-note-title">Nota de Atualização — Versão v1.1</h2>
+        <p>Central de Atendimento TIC <span aria-hidden="true">|</span> CRQ-12</p>
+      </header>
+      <div class="release-note-content">
+        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.1</strong> da Central de Atendimento TIC traz novos recursos de acessibilidade, melhorias de desempenho e responsividade, além de correções visuais e operacionais.</p>
+        <section>
+          <h3><i data-lucide="sliders-horizontal"></i>Novos recursos de acessibilidade</h3>
+          <p>Foi adicionada uma nova tela de <strong>Acessibilidade</strong> ao menu lateral, oferecendo os seguintes recursos:</p>
+          <ul><li>Navegação por teclado;</li><li>Contraste em cores fortes;</li><li>Ampliador de tela.</li></ul>
+        </section>
+        <section>
+          <h3><i data-lucide="trending-up"></i>Melhorias</h3>
+          <ul>
+            <li>Aprimoramento da responsividade do sistema, proporcionando melhor adaptação a monitores grandes ou pequenos e ao uso de diferentes níveis de zoom;</li>
+            <li>Otimização do carregamento das páginas e melhoria do desempenho geral do sistema;</li>
+            <li>Automatização dos chamados agendados: quando a data e o horário definidos na opção <strong>“Planejar”</strong> forem alcançados, o status do chamado será alterado automaticamente para <strong>“Inicializar”</strong>.</li>
+          </ul>
+        </section>
+        <section>
+          <h3><i data-lucide="circle-check"></i>Correções</h3>
+          <ul>
+            <li>Correção visual dos campos dos chamados que, no modo escuro, estavam sendo exibidos com cores do modo claro;</li>
+            <li>Correção de textos exibidos na cor branca em fundos claros, o que impossibilitava a leitura;</li>
+            <li>Correção do campo na tabela <strong>“Usuários Online”</strong> que ultrapassava os limites da área de exibição.</li>
+          </ul>
+        </section>
+        <p class="release-note-closing">A atualização reforça nosso compromisso em oferecer uma Central de Atendimento TIC mais acessível, rápida, estável e adequada às necessidades dos usuários.</p>
+      </div>
+      <footer class="release-note-footer">
+        <label class="release-note-dismiss"><input id="release-note-dismiss" type="checkbox" /><span><strong>Não mostrar novamente</strong><small>Esta nota não será exibida nos próximos acessos.</small></span></label>
+        <p id="release-note-error" class="release-note-error" role="alert"></p>
+        <button id="release-note-continue" class="primary-button" type="button">Continuar para o sistema</button>
+      </footer>
+    </article>`;
+  document.body.appendChild(overlay);
+  createIcons({ icons: usedIcons });
+  overlay.querySelector<HTMLElement>(".release-note-modal")?.focus();
+
+  overlay.querySelector<HTMLButtonElement>("#release-note-continue")?.addEventListener("click", async () => {
+    const button = overlay.querySelector<HTMLButtonElement>("#release-note-continue");
+    const dismiss = overlay.querySelector<HTMLInputElement>("#release-note-dismiss")?.checked === true;
+    const errorElement = overlay.querySelector<HTMLElement>("#release-note-error");
+    if (dismiss) {
+      if (!supabase) {
+        if (errorElement) errorElement.textContent = "Não foi possível acessar o banco para salvar sua preferência.";
+        return;
+      }
+      if (button) button.disabled = true;
+      const { error } = await supabase.from("profiles").update({ acknowledged_release_version: CURRENT_RELEASE_NOTE_VERSION }).eq("id", user.id);
+      if (error) {
+        if (button) button.disabled = false;
+        if (errorElement) errorElement.textContent = "Não foi possível salvar sua preferência. Tente novamente.";
+        return;
+      }
+      user.acknowledgedReleaseVersion = CURRENT_RELEASE_NOTE_VERSION;
+    }
+    overlay.remove();
+    app?.removeAttribute("inert");
+    forcedPassword?.removeAttribute("inert");
+    forcedPassword?.removeAttribute("aria-hidden");
+    forcedPassword?.querySelector<HTMLInputElement>("#forced-new-password")?.focus();
+  });
+  return true;
 }
 
 // Desenha a tela de entrada (login e cadastro)
@@ -3002,6 +3090,7 @@ function bindEvents() {
   });
 
   document.querySelector<HTMLButtonElement>("#logout-button")?.addEventListener("click", async () => {
+    releaseNoteShownThisSession = false;
     await stopRealtime();
     if (supabase) {
       await supabase.auth.signOut();
@@ -3372,7 +3461,8 @@ async function handleLogin(event: SubmitEvent) {
           departmentId: profile.department_id,
           managedDepartmentIds: profile.managed_department_ids || [],
           active: true,
-          mustChangePassword: profile.must_change_password === true
+          mustChangePassword: profile.must_change_password === true,
+          acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined
         };
         data.users.push(existing);
       } else {
@@ -3384,7 +3474,8 @@ async function handleLogin(event: SubmitEvent) {
           departmentId: profile.department_id,
           managedDepartmentIds: profile.managed_department_ids || [],
           active: true,
-          mustChangePassword: profile.must_change_password === true
+          mustChangePassword: profile.must_change_password === true,
+          acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined
         });
       }
       setCurrentUserId(userId);
@@ -3574,7 +3665,8 @@ async function handleLogin(event: SubmitEvent) {
             managedDepartmentIds: profile.managed_department_ids || [],
             active: profile.active !== false,
             mustChangePassword: profile.must_change_password === true,
-            onboardingCompletedAt: profile.onboarding_completed_at || undefined
+            onboardingCompletedAt: profile.onboarding_completed_at || undefined,
+            acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined
           };
           data.users.push(authenticatedUser);
         } else {
@@ -3585,6 +3677,7 @@ async function handleLogin(event: SubmitEvent) {
           authenticatedUser.managedDepartmentIds = profile.managed_department_ids || [];
           authenticatedUser.active = profile.active !== false;
           authenticatedUser.mustChangePassword = profile.must_change_password === true;
+          authenticatedUser.acknowledgedReleaseVersion = profile.acknowledged_release_version || undefined;
         }
       }
     } else {
@@ -4931,7 +5024,8 @@ async function restoreSession(): Promise<void> {
               departmentId: profile.department_id,
               managedDepartmentIds: profile.managed_department_ids || [],
               active: profile.active !== false,
-              onboardingCompletedAt: profile.onboarding_completed_at || undefined
+              onboardingCompletedAt: profile.onboarding_completed_at || undefined,
+              acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined
             });
           }
           setCurrentUserId(userId);

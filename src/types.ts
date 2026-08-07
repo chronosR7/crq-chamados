@@ -39,6 +39,7 @@ export interface User {
   requestedRole?: Role;
   approvedByTic?: boolean;
   onboardingCompletedAt?: string;
+  acknowledgedReleaseVersion?: string;
   mustChangePassword?: boolean;
 }
 
