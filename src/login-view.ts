@@ -51,6 +51,15 @@ export function renderLoginView(_data: AppData, authMode: AuthMode, loginRole: R
       <section class="login-panel">
         <div class="login-card">
           <form id="login-form" class="login-form">
+            <div class="login-card-identity" aria-label="Conselho Regional de Química da 12ª Região">
+              <span class="login-card-logo-wrap">
+                <img src="/crq12-logo.jpg" alt="Logo do CRQ-12" />
+              </span>
+              <span>
+                <strong>CRQ-12</strong>
+                <small>Sistema interno de chamados</small>
+              </span>
+            </div>
             <div class="form-title">
               <span class="section-kicker">Acesso ao Sistema</span>
               <h2>${authTitle}</h2>
