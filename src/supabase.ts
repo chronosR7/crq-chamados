@@ -352,9 +352,8 @@ export async function createTicketEventInSupabase(ticketId: number, event: Ticke
   if (error) throw new Error(error.message);
 }
 
-export async function createNotificationsInSupabase(notifications: NotificationItem[]) {
-  if (!supabase || notifications.length === 0) return;
-  const { error } = await supabase.from('notifications').upsert(notifications.map((notification) => ({
+function notificationPayload(notification: NotificationItem) {
+  return {
     id: notification.id,
     user_id: notification.userId,
     ticket_id: notification.ticketId || null,
@@ -363,8 +362,26 @@ export async function createNotificationsInSupabase(notifications: NotificationI
     body: notification.body,
     read: false,
     created_at: notification.createdAt
-  })), { onConflict: 'id', ignoreDuplicates: true });
-  if (error) throw new Error(error.message);
+  };
+}
+
+export async function createNotificationsInSupabase(notifications: NotificationItem[]) {
+  if (!supabase || notifications.length === 0) return;
+  const payloads = notifications.map(notificationPayload);
+  const { error } = await supabase.from('notifications').upsert(payloads, { onConflict: 'id', ignoreDuplicates: true });
+  if (!error) return;
+
+  devWarn('Falha no lote de notificações; tentando entrega individual:', error.message);
+  let delivered = 0;
+  for (const payload of payloads) {
+    const { error: itemError } = await supabase.from('notifications').upsert(payload, { onConflict: 'id', ignoreDuplicates: true });
+    if (itemError) {
+      devWarn(`Notificação ${payload.id} não entregue:`, itemError.message);
+    } else {
+      delivered += 1;
+    }
+  }
+  if (delivered === 0) throw new Error(error.message);
 }
 
 export async function markNotificationsReadInSupabase(notificationIds: string[]) {

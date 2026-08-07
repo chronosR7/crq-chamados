@@ -3934,8 +3934,7 @@ function bindTicketForms() {
     try {
       await createNotificationsInSupabase(createdNotifications);
     } catch (error) {
-      devError("Chamado criado sem todas as notificações:", error);
-      secondaryWarnings.push("algumas notificações não puderam ser enviadas");
+      devWarn("Chamado criado, mas as notificações auxiliares não foram entregues:", error);
     }
     selectedFormFiles = [];
     state.view = "tickets";
