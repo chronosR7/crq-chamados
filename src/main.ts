@@ -873,6 +873,10 @@ function renderShell(user: User) {
             ${navButton("notifications", "bell", `Notificações${unread ? ` (${unread})` : ""}`)}
             ${user.role === "tic" ? navButton("trash", "trash-2", "Lixeira") : ""}
             ${navButton("settings", "settings", "Configurações")}
+            <button class="nav-button accessibility-nav-button" type="button" data-a11y-open aria-controls="a11y-panel" aria-expanded="false" title="Acessibilidade">
+              <span class="accessibility-nav-icon" aria-hidden="true">♿</span>
+              <span class="nav-label">Acessibilidade</span>
+            </button>
           </nav>
 
           ${user.role === "tic" ? `
