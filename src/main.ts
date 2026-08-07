@@ -873,10 +873,6 @@ function renderShell(user: User) {
             ${navButton("notifications", "bell", `Notificações${unread ? ` (${unread})` : ""}`)}
             ${user.role === "tic" ? navButton("trash", "trash-2", "Lixeira") : ""}
             ${navButton("settings", "settings", "Configurações")}
-            <button class="nav-button accessibility-nav-button" type="button" data-a11y-open aria-controls="a11y-panel" aria-expanded="false" title="Acessibilidade">
-              <span class="accessibility-nav-icon" aria-hidden="true">♿</span>
-              <span class="nav-label">Acessibilidade</span>
-            </button>
           </nav>
 
           ${user.role === "tic" ? `
@@ -2685,6 +2681,20 @@ function renderSettings(user: User) {
               <i data-lucide="moon"></i> Escuro
             </button>
           </div>
+        </li>
+
+        <!-- Recursos de acessibilidade escolhidos pelo próprio usuário -->
+        <li class="settings-item settings-accessibility-item">
+          <div class="settings-item-info">
+            <span class="settings-accessibility-icon" aria-hidden="true">♿</span>
+            <div>
+              <strong>Acessibilidade</strong>
+              <small>Navegação por teclado, contraste forte e ampliador de tela</small>
+            </div>
+          </div>
+          <button class="ghost-button" type="button" data-a11y-open aria-controls="a11y-panel" aria-expanded="false">
+            Configurar acessibilidade
+          </button>
         </li>
 
         <!-- Alterar senha -->

@@ -8822,19 +8822,26 @@ table tbody tr:hover {
 }
 
 .has-authenticated-shell .a11y-login-trigger { display: none !important; }
+.a11y-login-trigger[hidden] { display: none !important; }
 .a11y-panel { right: auto !important; left: 0 !important; bottom: 56px !important; }
 .has-authenticated-shell .a11y-panel { bottom: 0 !important; }
 
-.accessibility-nav-button .accessibility-nav-icon {
+.settings-accessibility-icon {
   display: inline-grid;
   place-items: center;
-  flex: 0 0 22px;
-  width: 22px;
-  height: 22px;
-  color: currentColor;
-  font-size: 1rem;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-soft));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 10px;
+  font-size: 1.15rem;
   line-height: 1;
 }
+
+.settings-accessibility-item .settings-item-info { min-width: 0; }
+.settings-accessibility-item small { line-height: 1.45; }
 
 /* Remove os filetes decorativos duplicados do item ativo. A cor, a borda e o
    fundo continuam indicando claramente a página selecionada. */

@@ -125,6 +125,12 @@ function handleShortcut(event: KeyboardEvent) {
     f: () => activateView("tickets"),
     n: () => activateView("new-ticket", "#quick-new-ticket"),
     g: () => activateView("settings"),
+    b: () => activateView("knowledge"),
+    o: () => activateView("notifications"),
+    r: () => activateView("reports"),
+    u: () => activateView("users"),
+    e: () => activateView("departments"),
+    t: () => activateView("trash"),
     c: () => {
       preferences.highContrast = !preferences.highContrast;
       savePreferences();
@@ -196,7 +202,7 @@ function centerMarkup() {
         <p class="a11y-intro">Ative somente os recursos de que precisa. As escolhas ficam salvas neste dispositivo.</p>
         <div class="a11y-options">
           <button class="a11y-option" data-a11y-toggle="keyboardMode" data-a11y-name="Navegação por teclado" type="button"><strong>Navegação por teclado</strong><small>Realça o item focado e habilita atalhos para as áreas mais utilizadas.</small><span class="a11y-switch-label"></span></button>
-          <div id="a11y-keyboard-guide" class="a11y-keyboard-guide"><strong>Atalhos disponíveis</strong><span><kbd>Tab</kbd> avançar · <kbd>Shift</kbd> + <kbd>Tab</kbd> voltar · <kbd>Enter</kbd> abrir · <kbd>Espaço</kbd> marcar · <kbd>Esc</kbd> fechar<br><kbd>Alt</kbd> + <kbd>A</kbd> acessibilidade · <kbd>Alt</kbd> + <kbd>P</kbd> pesquisa · <kbd>Alt</kbd> + <kbd>D</kbd> painel · <kbd>Alt</kbd> + <kbd>F</kbd> fila · <kbd>Alt</kbd> + <kbd>N</kbd> novo chamado · <kbd>Alt</kbd> + <kbd>G</kbd> configurações · <kbd>Alt</kbd> + <kbd>C</kbd> contraste · <kbd>Alt</kbd> + <kbd>L</kbd> lupa.</span></div>
+          <div id="a11y-keyboard-guide" class="a11y-keyboard-guide"><strong>Como navegar sem o mouse</strong><span><kbd>Tab</kbd> avança · <kbd>Shift</kbd> + <kbd>Tab</kbd> volta · <kbd>Enter</kbd> abre · <kbd>Espaço</kbd> marca opções · <kbd>Esc</kbd> fecha janelas.</span><strong>Atalhos gerais</strong><span><kbd>Alt+A</kbd> acessibilidade · <kbd>Alt+P</kbd> pesquisa · <kbd>Alt+D</kbd> painel · <kbd>Alt+F</kbd> fila · <kbd>Alt+N</kbd> novo chamado · <kbd>Alt+G</kbd> configurações · <kbd>Alt+B</kbd> base de conhecimento · <kbd>Alt+O</kbd> notificações.</span><strong>Atalhos conforme a permissão</strong><span><kbd>Alt+R</kbd> relatórios · <kbd>Alt+U</kbd> usuários · <kbd>Alt+E</kbd> departamentos · <kbd>Alt+T</kbd> lixeira · <kbd>Alt+C</kbd> contraste forte · <kbd>Alt+L</kbd> ampliador.</span></div>
           <button class="a11y-option" data-a11y-toggle="highContrast" data-a11y-name="Contraste forte" type="button"><strong>Contraste de cores forte</strong><small>Aplica fundos sólidos, textos mais definidos e bordas evidentes nos modos claro e escuro.</small><span class="a11y-switch-label"></span></button>
           <button class="a11y-option" data-a11y-toggle="magnifier" data-a11y-name="Ampliador de tela" type="button"><strong>Ampliador de tela</strong><small>Uma lupa de 1,8× acompanha o ponteiro. Em celulares, use o gesto de pinça do navegador.</small><span class="a11y-switch-label"></span></button>
         </div>
@@ -209,7 +215,9 @@ function centerMarkup() {
 
 export function mountAccessibilityCenter() {
   if (!document.querySelector(".a11y-center")) document.body.insertAdjacentHTML("beforeend", centerMarkup());
-  document.body.classList.toggle("has-authenticated-shell", Boolean(document.querySelector(".app-shell")));
+  const authenticated = Boolean(document.querySelector(".app-shell"));
+  document.body.classList.toggle("has-authenticated-shell", authenticated);
+  document.querySelector<HTMLButtonElement>(".a11y-login-trigger")?.toggleAttribute("hidden", authenticated);
   bindListeners();
   applyPreferences();
 }
