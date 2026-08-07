@@ -8303,6 +8303,25 @@ table tbody tr:hover {
   color: var(--text-base) !important;
 }
 
+[data-theme="dark"] .planned-schedule-card {
+  color: var(--text-base) !important;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(49, 95, 210, 0.13)) !important;
+  border-color: var(--ui-border-strong) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+[data-theme="dark"] .planned-schedule-card i {
+  color: var(--brand-strong) !important;
+}
+
+[data-theme="dark"] .planned-schedule-card strong {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .planned-schedule-card span {
+  color: var(--brand-strong) !important;
+}
+
 [data-theme="dark"] .empty-state {
   color: var(--muted) !important;
   background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
