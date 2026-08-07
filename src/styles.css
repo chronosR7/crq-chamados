@@ -9000,3 +9000,48 @@ table tbody tr:hover {
   .accessibility-page-footer { align-items: stretch; flex-direction: column; }
   .accessibility-page-footer button { width: 100%; }
 }
+
+/* No login, somente o acionador fica no canto; a janela abre centralizada. */
+.a11y-login-trigger svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.9;
+}
+
+.a11y-backdrop {
+  position: fixed;
+  z-index: 1;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  padding: 0;
+  background: rgb(3 10 24 / 58%);
+  border: 0;
+  backdrop-filter: blur(5px);
+  cursor: default;
+}
+
+.a11y-backdrop[hidden] { display: none !important; }
+
+body:not(.has-authenticated-shell) .a11y-panel {
+  position: fixed !important;
+  z-index: 2 !important;
+  top: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 50% !important;
+  width: min(460px, calc(100vw - 28px)) !important;
+  max-height: min(720px, calc(100dvh - 28px)) !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+@media (max-width: 520px) {
+  body:not(.has-authenticated-shell) .a11y-panel {
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: 50% !important;
+    width: calc(100vw - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+  }
+}

@@ -1,5 +1,4 @@
 import {
-  Accessibility,
   Activity,
   Archive,
   ArrowLeft,
@@ -50,6 +49,7 @@ import {
   Send,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   SquarePlus,
   Sun,
   TimerReset,
@@ -107,7 +107,6 @@ function devError(...args: any[]) {
 
 // Lista de ícones usados na interface gráfica
 const usedIcons = {
-  Accessibility,
   Activity,
   Archive,
   ArrowLeft,
@@ -158,6 +157,7 @@ const usedIcons = {
   Send,
   Settings,
   ShieldCheck,
+  SlidersHorizontal,
   SquarePlus,
   Sun,
   TimerReset,
@@ -881,7 +881,7 @@ function renderShell(user: User) {
             ${navButton("notifications", "bell", `Notificações${unread ? ` (${unread})` : ""}`)}
             ${user.role === "tic" ? navButton("trash", "trash-2", "Lixeira") : ""}
             ${navButton("settings", "settings", "Configurações")}
-            ${navButton("accessibility", "accessibility", "Acessibilidade")}
+            ${navButton("accessibility", "sliders-horizontal", "Acessibilidade")}
           </nav>
 
           ${user.role === "tic" ? `

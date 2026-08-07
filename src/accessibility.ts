@@ -81,17 +81,21 @@ function setExpanded(expanded: boolean) {
 
 function openCenter() {
   const panel = document.querySelector<HTMLElement>("#a11y-panel");
+  const backdrop = document.querySelector<HTMLElement>("#a11y-backdrop");
   if (!panel) return;
   lastFocusedElement = document.activeElement as HTMLElement;
   panel.hidden = false;
+  if (backdrop) backdrop.hidden = false;
   setExpanded(true);
   panel.querySelector<HTMLButtonElement>("#a11y-close")?.focus();
 }
 
 function closeCenter(restoreFocus = true) {
   const panel = document.querySelector<HTMLElement>("#a11y-panel");
+  const backdrop = document.querySelector<HTMLElement>("#a11y-backdrop");
   if (!panel) return;
   panel.hidden = true;
+  if (backdrop) backdrop.hidden = true;
   setExpanded(false);
   if (restoreFocus) lastFocusedElement?.focus();
 }
@@ -159,7 +163,7 @@ function bindListeners() {
   document.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
     if (target.closest("[data-a11y-open]")) return openCenter();
-    if (target.closest("#a11y-close")) return closeCenter();
+    if (target.closest("#a11y-close, #a11y-backdrop")) return closeCenter();
     if (target.closest("#a11y-reset")) {
       preferences = { ...defaults };
       savePreferences();
@@ -196,8 +200,9 @@ function centerMarkup() {
     <a class="a11y-skip-link" href="#main-content">Pular para o conteúdo principal</a>
     <div class="a11y-center">
       <button class="a11y-login-trigger" type="button" data-a11y-open aria-controls="a11y-panel" aria-expanded="false">
-        <span aria-hidden="true">♿</span><span>Acessibilidade</span>
+        <i data-lucide="sliders-horizontal" aria-hidden="true"></i><span>Acessibilidade</span>
       </button>
+      <button id="a11y-backdrop" class="a11y-backdrop" type="button" aria-label="Fechar configurações de acessibilidade" hidden></button>
       <section id="a11y-panel" class="a11y-panel" role="dialog" aria-labelledby="a11y-title" hidden>
         <header><div><span class="a11y-eyebrow">Preferências pessoais</span><h2 id="a11y-title">Acessibilidade</h2></div><button id="a11y-close" type="button" aria-label="Fechar central">×</button></header>
         <p class="a11y-intro">Ative somente os recursos de que precisa. As escolhas ficam salvas neste dispositivo.</p>
@@ -218,7 +223,7 @@ export function renderAccessibilityPage() {
   return `
     <section class="accessibility-page" aria-labelledby="accessibility-page-title">
       <header class="accessibility-page-hero">
-        <div class="accessibility-page-icon"><i data-lucide="accessibility"></i></div>
+        <div class="accessibility-page-icon"><i data-lucide="sliders-horizontal"></i></div>
         <div>
           <span class="section-kicker">Preferências pessoais</span>
           <h2 id="accessibility-page-title">Recursos de acessibilidade</h2>
