@@ -85,6 +85,7 @@ import { ATTACHMENT_ACCEPT, MAX_ATTACHMENT_BYTES, validateAttachment } from './f
 import { activeUsersForDepartment, authorizedDepartmentIds, canUserSeeTicket, reportRangeError } from './ticket-rules';
 import { completeOwnProfileInSupabase, createNotificationsInSupabase, createTemporaryPasswordInSupabase, createTicketEventInSupabase, createTicketInSupabase, createUserInSupabase, deleteDepartmentFromSupabase, deleteKnowledgeTutorial, deleteTicketFromSupabase, deleteUserFromSupabase, deleteUserNotificationsFromSupabase, emptyTrashInSupabase, isSupabaseConfigured, loadDataFromSupabase, loadKnowledgeTutorials, markNotificationsReadInSupabase, saveDataToSupabase, saveKnowledgeTutorial, supabase, updateManagedUserInSupabase, updateTicketInSupabase, uploadTicketAttachments } from './supabase';
 import { getPublicAppUrl } from './app-url';
+import { mountAccessibilityCenter } from './accessibility';
 import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, KnowledgeTutorial, NotificationItem, Priority, Role, RuntimeState, Ticket, TicketEvent, TicketStatus, TicketType, User, View } from './types';
 
 // Configurações e limites globais
@@ -686,6 +687,7 @@ function render() {
     const user = currentUser();
     app.innerHTML = user ? renderShell(user) : renderLogin();
     applyBulmaComponentClasses();
+    mountAccessibilityCenter();
     createIcons({ icons: usedIcons });
     bindEvents();
     if (user) {
@@ -907,7 +909,7 @@ function renderShell(user: User) {
           </button>
         </aside>
 
-        <main class="workspace">
+        <main id="main-content" class="workspace" tabindex="-1">
           <header class="topbar">
             <div>
               <span class="section-kicker">${roleLabels[user.role]} · ${escapeHtml(departmentById(user.departmentId)?.name ?? "CRQ-12")}</span>

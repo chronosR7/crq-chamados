@@ -13,7 +13,7 @@ export function renderLoginView(_data: AppData, authMode: AuthMode, loginRole: R
   ];
 
   return `
-    <main class="login-page">
+    <main id="main-content" class="login-page" tabindex="-1">
       <div class="login-visual-fx" aria-hidden="true">
         <div class="login-cursor-glow"></div>
         <div class="login-tech-grid"></div>
