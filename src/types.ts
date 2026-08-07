@@ -5,7 +5,7 @@ export type Role = "usuario" | "gestor" | "tic";
 export type AuthMode = "login" | "signup" | "reset" | "update-password";
 
 // Páginas/telas disponíveis na navegação
-export type View = "dashboard" | "tickets" | "new-ticket" | "users" | "notifications" | "trash" | "departments" | "reports" | "knowledge" | "settings";
+export type View = "dashboard" | "tickets" | "new-ticket" | "users" | "notifications" | "trash" | "departments" | "reports" | "knowledge" | "settings" | "accessibility";
 
 // Status possíveis de um chamado durante seu ciclo de vida
 export type TicketStatus = "novo" | "atribuido" | "planejado" | "pendente" | "solucionado" | "fechado" | "excluido";

@@ -1,4 +1,5 @@
 import {
+  Accessibility,
   Activity,
   Archive,
   ArrowLeft,
@@ -16,6 +17,7 @@ import {
   CircleHelp,
   Clock,
   ContactRound,
+  Contrast,
   Copy,
   Edit3,
   FileText,
@@ -23,6 +25,7 @@ import {
   HelpCircle,
   Inbox,
   KeyRound,
+  Keyboard,
   LayoutDashboard,
   ListFilter,
   Lock,
@@ -59,6 +62,7 @@ import {
   UserPlus,
   Users,
   X,
+  ZoomIn,
   createIcons
 } from "lucide";
 import {
@@ -85,7 +89,7 @@ import { ATTACHMENT_ACCEPT, MAX_ATTACHMENT_BYTES, validateAttachment } from './f
 import { activeUsersForDepartment, authorizedDepartmentIds, canUserSeeTicket, reportRangeError } from './ticket-rules';
 import { completeOwnProfileInSupabase, createNotificationsInSupabase, createTemporaryPasswordInSupabase, createTicketEventInSupabase, createTicketInSupabase, createUserInSupabase, deleteDepartmentFromSupabase, deleteKnowledgeTutorial, deleteTicketFromSupabase, deleteUserFromSupabase, deleteUserNotificationsFromSupabase, emptyTrashInSupabase, isSupabaseConfigured, loadDataFromSupabase, loadKnowledgeTutorials, markNotificationsReadInSupabase, saveDataToSupabase, saveKnowledgeTutorial, supabase, updateManagedUserInSupabase, updateTicketInSupabase, uploadTicketAttachments } from './supabase';
 import { getPublicAppUrl } from './app-url';
-import { mountAccessibilityCenter } from './accessibility';
+import { mountAccessibilityCenter, renderAccessibilityPage } from './accessibility';
 import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, KnowledgeTutorial, NotificationItem, Priority, Role, RuntimeState, Ticket, TicketEvent, TicketStatus, TicketType, User, View } from './types';
 
 // Configurações e limites globais
@@ -103,6 +107,7 @@ function devError(...args: any[]) {
 
 // Lista de ícones usados na interface gráfica
 const usedIcons = {
+  Accessibility,
   Activity,
   Archive,
   ArrowLeft,
@@ -120,6 +125,7 @@ const usedIcons = {
   CircleHelp,
   Clock,
   ContactRound,
+  Contrast,
   Copy,
   Edit3,
   FileText,
@@ -127,6 +133,7 @@ const usedIcons = {
   HelpCircle,
   Inbox,
   KeyRound,
+  Keyboard,
   LayoutDashboard,
   ListFilter,
   Lock,
@@ -162,7 +169,8 @@ const usedIcons = {
   User: UserIcon,
   UserPlus,
   Users,
-  X
+  X,
+  ZoomIn
 };
 
 // Elemento principal onde a aplicação é desenhada
@@ -873,6 +881,7 @@ function renderShell(user: User) {
             ${navButton("notifications", "bell", `Notificações${unread ? ` (${unread})` : ""}`)}
             ${user.role === "tic" ? navButton("trash", "trash-2", "Lixeira") : ""}
             ${navButton("settings", "settings", "Configurações")}
+            ${navButton("accessibility", "accessibility", "Acessibilidade")}
           </nav>
 
           ${user.role === "tic" ? `
@@ -986,7 +995,8 @@ function viewTitle(user: User) {
     departments: "Departamentos",
     reports: "Relatórios",
     knowledge: "Base de conhecimento",
-    settings: "Configurações"
+    settings: "Configurações",
+    accessibility: "Acessibilidade"
   };
   return map[state.view] || "Dashboard";
 }
@@ -1003,6 +1013,7 @@ function renderView(user: User) {
   if (state.view === "reports" && user.role !== "usuario") return renderReports(user);
   if (state.view === "knowledge") return renderKnowledgeBase(user);
   if (state.view === "settings") return renderSettings(user);
+  if (state.view === "accessibility") return renderAccessibilityPage();
   return renderCleanDashboard(user);
 }
 
@@ -2681,20 +2692,6 @@ function renderSettings(user: User) {
               <i data-lucide="moon"></i> Escuro
             </button>
           </div>
-        </li>
-
-        <!-- Recursos de acessibilidade escolhidos pelo próprio usuário -->
-        <li class="settings-item settings-accessibility-item">
-          <div class="settings-item-info">
-            <span class="settings-accessibility-icon" aria-hidden="true">♿</span>
-            <div>
-              <strong>Acessibilidade</strong>
-              <small>Navegação por teclado, contraste forte e ampliador de tela</small>
-            </div>
-          </div>
-          <button class="ghost-button" type="button" data-a11y-open aria-controls="a11y-panel" aria-expanded="false">
-            Configurar acessibilidade
-          </button>
         </li>
 
         <!-- Alterar senha -->
@@ -4739,7 +4736,8 @@ const VALID_VIEWS: View[] = [
   "departments",
   "reports",
   "knowledge",
-  "settings"
+  "settings",
+  "accessibility"
 ];
 
 function saveViewState() {

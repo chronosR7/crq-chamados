@@ -38,14 +38,14 @@ function announce(message: string) {
 
 function updateControls() {
   (Object.keys(preferences) as Array<keyof Preferences>).forEach((key) => {
-    const button = document.querySelector<HTMLButtonElement>(`[data-a11y-toggle="${key}"]`);
-    if (!button) return;
-    const enabled = preferences[key];
-    button.setAttribute("aria-pressed", String(enabled));
-    const status = button.querySelector<HTMLElement>(".a11y-switch-label");
-    if (status) status.textContent = enabled ? "Ativado" : "Desativado";
+    document.querySelectorAll<HTMLButtonElement>(`[data-a11y-toggle="${key}"]`).forEach((button) => {
+      const enabled = preferences[key];
+      button.setAttribute("aria-pressed", String(enabled));
+      const status = button.querySelector<HTMLElement>(".a11y-switch-label");
+      if (status) status.textContent = enabled ? "Ativado" : "Desativado";
+    });
   });
-  document.querySelector("#a11y-keyboard-guide")?.classList.toggle("is-visible", preferences.keyboardMode);
+  document.querySelectorAll("[data-a11y-keyboard-guide]").forEach((guide) => guide.classList.toggle("is-visible", preferences.keyboardMode));
 }
 
 function rebuildMagnifier() {
@@ -114,7 +114,8 @@ function handleShortcut(event: KeyboardEvent) {
 
   if (key === "a") {
     event.preventDefault();
-    openCenter();
+    if (document.querySelector(".app-shell")) activateView("accessibility");
+    else openCenter();
     return;
   }
   if (!preferences.keyboardMode || isTyping(event.target)) return;
@@ -202,7 +203,7 @@ function centerMarkup() {
         <p class="a11y-intro">Ative somente os recursos de que precisa. As escolhas ficam salvas neste dispositivo.</p>
         <div class="a11y-options">
           <button class="a11y-option" data-a11y-toggle="keyboardMode" data-a11y-name="Navegação por teclado" type="button"><strong>Navegação por teclado</strong><small>Realça o item focado e habilita atalhos para as áreas mais utilizadas.</small><span class="a11y-switch-label"></span></button>
-          <div id="a11y-keyboard-guide" class="a11y-keyboard-guide"><strong>Como navegar sem o mouse</strong><span><kbd>Tab</kbd> avança · <kbd>Shift</kbd> + <kbd>Tab</kbd> volta · <kbd>Enter</kbd> abre · <kbd>Espaço</kbd> marca opções · <kbd>Esc</kbd> fecha janelas.</span><strong>Atalhos gerais</strong><span><kbd>Alt+A</kbd> acessibilidade · <kbd>Alt+P</kbd> pesquisa · <kbd>Alt+D</kbd> painel · <kbd>Alt+F</kbd> fila · <kbd>Alt+N</kbd> novo chamado · <kbd>Alt+G</kbd> configurações · <kbd>Alt+B</kbd> base de conhecimento · <kbd>Alt+O</kbd> notificações.</span><strong>Atalhos conforme a permissão</strong><span><kbd>Alt+R</kbd> relatórios · <kbd>Alt+U</kbd> usuários · <kbd>Alt+E</kbd> departamentos · <kbd>Alt+T</kbd> lixeira · <kbd>Alt+C</kbd> contraste forte · <kbd>Alt+L</kbd> ampliador.</span></div>
+          <div class="a11y-keyboard-guide" data-a11y-keyboard-guide><strong>Como navegar sem o mouse</strong><span><kbd>Tab</kbd> avança · <kbd>Shift</kbd> + <kbd>Tab</kbd> volta · <kbd>Enter</kbd> abre · <kbd>Espaço</kbd> marca opções · <kbd>Esc</kbd> fecha janelas.</span><strong>Atalhos gerais</strong><span><kbd>Alt+A</kbd> acessibilidade · <kbd>Alt+P</kbd> pesquisa · <kbd>Alt+D</kbd> painel · <kbd>Alt+F</kbd> fila · <kbd>Alt+N</kbd> novo chamado · <kbd>Alt+G</kbd> configurações · <kbd>Alt+B</kbd> base de conhecimento · <kbd>Alt+O</kbd> notificações.</span><strong>Atalhos conforme a permissão</strong><span><kbd>Alt+R</kbd> relatórios · <kbd>Alt+U</kbd> usuários · <kbd>Alt+E</kbd> departamentos · <kbd>Alt+T</kbd> lixeira · <kbd>Alt+C</kbd> contraste forte · <kbd>Alt+L</kbd> ampliador.</span></div>
           <button class="a11y-option" data-a11y-toggle="highContrast" data-a11y-name="Contraste forte" type="button"><strong>Contraste de cores forte</strong><small>Aplica fundos sólidos, textos mais definidos e bordas evidentes nos modos claro e escuro.</small><span class="a11y-switch-label"></span></button>
           <button class="a11y-option" data-a11y-toggle="magnifier" data-a11y-name="Ampliador de tela" type="button"><strong>Ampliador de tela</strong><small>Uma lupa de 1,8× acompanha o ponteiro. Em celulares, use o gesto de pinça do navegador.</small><span class="a11y-switch-label"></span></button>
         </div>
@@ -211,6 +212,49 @@ function centerMarkup() {
     </div>
     <div id="a11y-magnifier" class="a11y-magnifier" aria-hidden="true" hidden><div class="a11y-magnifier-stage"></div></div>
     <div id="a11y-live-region" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>`;
+}
+
+export function renderAccessibilityPage() {
+  return `
+    <section class="accessibility-page" aria-labelledby="accessibility-page-title">
+      <header class="accessibility-page-hero">
+        <div class="accessibility-page-icon"><i data-lucide="accessibility"></i></div>
+        <div>
+          <span class="section-kicker">Preferências pessoais</span>
+          <h2 id="accessibility-page-title">Recursos de acessibilidade</h2>
+          <p>Configure a experiência de uso deste dispositivo. Cada recurso pode ser ativado ou desativado de forma independente.</p>
+        </div>
+      </header>
+
+      <div class="accessibility-feature-grid">
+        <button class="accessibility-feature-card" data-a11y-toggle="keyboardMode" data-a11y-name="Navegação por teclado" type="button">
+          <span class="accessibility-feature-icon"><i data-lucide="keyboard"></i></span>
+          <span class="accessibility-feature-copy"><strong>Navegação por teclado</strong><small>Destaca claramente o controle selecionado e habilita atalhos para as principais áreas do sistema.</small></span>
+          <span class="a11y-switch-label"></span>
+        </button>
+        <button class="accessibility-feature-card" data-a11y-toggle="highContrast" data-a11y-name="Contraste forte" type="button">
+          <span class="accessibility-feature-icon"><i data-lucide="contrast"></i></span>
+          <span class="accessibility-feature-copy"><strong>Contraste de cores forte</strong><small>Usa fundos sólidos, textos definidos e bordas evidentes tanto no tema claro quanto no escuro.</small></span>
+          <span class="a11y-switch-label"></span>
+        </button>
+        <button class="accessibility-feature-card" data-a11y-toggle="magnifier" data-a11y-name="Ampliador de tela" type="button">
+          <span class="accessibility-feature-icon"><i data-lucide="zoom-in"></i></span>
+          <span class="accessibility-feature-copy"><strong>Ampliador de tela</strong><small>Uma lupa de 1,8× acompanha o ponteiro. Em telas sensíveis ao toque, utilize o gesto de pinça.</small></span>
+          <span class="a11y-switch-label"></span>
+        </button>
+      </div>
+
+      <section class="accessibility-shortcuts" data-a11y-keyboard-guide>
+        <div class="accessibility-shortcuts-heading"><i data-lucide="keyboard"></i><div><strong>Guia de navegação por teclado</strong><small>Este quadro aparece quando o recurso está ativado.</small></div></div>
+        <div class="accessibility-shortcut-groups">
+          <div><strong>Navegação básica</strong><p><kbd>Tab</kbd> avançar · <kbd>Shift</kbd> + <kbd>Tab</kbd> voltar · <kbd>Enter</kbd> abrir · <kbd>Espaço</kbd> marcar · <kbd>Esc</kbd> fechar</p></div>
+          <div><strong>Áreas principais</strong><p><kbd>Alt+A</kbd> acessibilidade · <kbd>Alt+P</kbd> pesquisa · <kbd>Alt+D</kbd> painel · <kbd>Alt+F</kbd> fila · <kbd>Alt+N</kbd> novo chamado · <kbd>Alt+G</kbd> configurações</p></div>
+          <div><strong>Mais atalhos</strong><p><kbd>Alt+B</kbd> conhecimento · <kbd>Alt+O</kbd> notificações · <kbd>Alt+R</kbd> relatórios · <kbd>Alt+U</kbd> usuários · <kbd>Alt+E</kbd> departamentos · <kbd>Alt+T</kbd> lixeira · <kbd>Alt+C</kbd> contraste · <kbd>Alt+L</kbd> ampliador</p></div>
+        </div>
+      </section>
+
+      <div class="accessibility-page-footer"><p>As preferências ficam salvas somente neste navegador.</p><button id="a11y-reset" class="ghost-button" type="button">Desativar todos os recursos</button></div>
+    </section>`;
 }
 
 export function mountAccessibilityCenter() {
