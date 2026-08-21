@@ -80,8 +80,8 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
-const APP_VERSION = "1.1";
-const CURRENT_RELEASE_NOTE_VERSION = "v1.1";
+const APP_VERSION = "1.2";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.2";
 const THEME_STORAGE_KEY = "crq-theme";
 const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
@@ -810,30 +810,50 @@ function showReleaseNoteIfNeeded(user: User) {
     <article class="release-note-modal" role="dialog" aria-modal="true" aria-labelledby="release-note-title" aria-describedby="release-note-summary" tabindex="-1">
       <header class="release-note-header">
         <div class="release-note-version"><i data-lucide="sparkles"></i><span>Atualização disponível</span></div>
-        <h2 id="release-note-title">Nota de Atualização — Versão v1.1</h2>
+        <h2 id="release-note-title">Nota de Atualização — Versão v1.2</h2>
         <p>Central de Atendimento TIC <span aria-hidden="true">|</span> CRQ-12</p>
       </header>
       <div class="release-note-content">
-        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.1</strong> da Central de Atendimento TIC traz novos recursos de acessibilidade, melhorias de desempenho e responsividade, além de correções visuais e operacionais.</p>
+        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.2</strong> da Central de Atendimento TIC entrega uma experiência mais leve, acessível e organizada, com melhorias importantes no painel de chamados, no dashboard e nos fluxos de atendimento.</p>
         <section>
-          <h3><i data-lucide="sliders-horizontal"></i>Novos recursos de acessibilidade</h3>
-          <p>Foi adicionada uma nova tela de <strong>Acessibilidade</strong> ao menu lateral, oferecendo os seguintes recursos:</p>
-          <ul><li>Navegação por teclado;</li><li>Contraste em cores fortes;</li><li>Ampliador de tela.</li></ul>
-        </section>
-        <section>
-          <h3><i data-lucide="trending-up"></i>Melhorias</h3>
+          <h3><i data-lucide="sliders-horizontal"></i>Experiência e acessibilidade</h3>
           <ul>
-            <li>Aprimoramento da responsividade do sistema, proporcionando melhor adaptação a monitores grandes ou pequenos e ao uso de diferentes níveis de zoom;</li>
-            <li>Otimização do carregamento das páginas e melhoria do desempenho geral do sistema;</li>
-            <li>Automatização dos chamados agendados: quando a data e o horário definidos na opção <strong>“Planejar”</strong> forem alcançados, o status do chamado será alterado automaticamente para <strong>“Inicializar”</strong>.</li>
+            <li>A tela de login e cadastro foi ajustada para funcionar melhor com zoom, permitindo rolagem e acesso aos botões mesmo em ampliações maiores;</li>
+            <li>Correções de contraste no modo escuro, incluindo campos claros, textos brancos em fundos claros e áreas com baixa leitura;</li>
+            <li>Interface mais limpa e minimalista, usando a identidade visual CRQ-12 com azul, branco e verde claro;</li>
+            <li>Logo CRQ-12 aplicada no sistema e no ícone exibido pelo navegador.</li>
           </ul>
         </section>
         <section>
-          <h3><i data-lucide="circle-check"></i>Correções</h3>
+          <h3><i data-lucide="trending-up"></i>Desempenho</h3>
           <ul>
-            <li>Correção visual dos campos dos chamados que, no modo escuro, estavam sendo exibidos com cores do modo claro;</li>
-            <li>Correção de textos exibidos na cor branca em fundos claros, o que impossibilitava a leitura;</li>
-            <li>Correção do campo na tabela <strong>“Usuários Online”</strong> que ultrapassava os limites da área de exibição.</li>
+            <li>Modo leve ativado para reduzir travamentos em computadores mais simples;</li>
+            <li>Troca entre modo claro e escuro otimizada, com transição mais curta e sem efeitos pesados;</li>
+            <li>Remoção de animações contínuas, brilhos e efeitos de vidro que consumiam processamento desnecessário;</li>
+            <li>Paginação na lista de chamados, reduzindo a quantidade de itens renderizados ao mesmo tempo.</li>
+          </ul>
+        </section>
+        <section>
+          <h3><i data-lucide="circle-check"></i>Chamados e fluxo TIC</h3>
+          <ul>
+            <li>Painel lateral do chamado agora pode ser fechado e redimensionado, liberando espaço para visualizar a tabela completa;</li>
+            <li>Chamados solucionados ficam bloqueados para edição, mantendo apenas a opção de reabrir;</li>
+            <li>Ao reabrir um chamado, o sistema solicita confirmação e devolve o chamado para a fila da TIC;</li>
+            <li>Ao fechar um chamado, o status final passa a ser salvo como <strong>Solucionado</strong>;</li>
+            <li>Botão <strong>Inicializar</strong> fica disponível quando o chamado está pendente e é bloqueado após a inicialização;</li>
+            <li>Chamados agendados mudam automaticamente para a fila de inicialização quando a data e o horário planejados são alcançados;</li>
+            <li>Ao registrar pendência, o solicitante recebe uma notificação em formato de pop-up com o ID do chamado;</li>
+            <li>Upload de imagens pelo clipboard habilitado no formulário de chamados.</li>
+          </ul>
+        </section>
+        <section>
+          <h3><i data-lucide="layout-dashboard"></i>Dashboard e organização</h3>
+          <ul>
+            <li>Quadros do Painel TIC reorganizados em uma grade mais equilibrada;</li>
+            <li>Widgets do dashboard podem ser movidos com o mouse para personalizar a posição;</li>
+            <li>Novo indicador de chamados abertos por usuário;</li>
+            <li>Filtro por departamento para o perfil TIC e visão restrita ao próprio departamento para gestores;</li>
+            <li>Correção do quadro <strong>Usuários Online</strong>, evitando estouro visual da faixa lateral.</li>
           </ul>
         </section>
         <p class="release-note-closing">A atualização reforça nosso compromisso em oferecer uma Central de Atendimento TIC mais acessível, rápida, estável e adequada às necessidades dos usuários.</p>
