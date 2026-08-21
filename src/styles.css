@@ -141,6 +141,19 @@ body {
   backface-visibility: hidden;
 }
 
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+html.theme-switching .theme-transition-flare {
+  display: none !important;
+}
+
 #app {
   height: 100vh;
   width: 100vw;

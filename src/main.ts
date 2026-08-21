@@ -87,6 +87,7 @@ const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
 const TIC_DASHBOARD_WIDGET_ORDER = ["category", "department", "requester", "status"] as const;
 type TicDashboardWidgetId = typeof TIC_DASHBOARD_WIDGET_ORDER[number];
 let releaseNoteShownThisSession = false;
+let themeSwitchTimer: number | undefined;
 
 function devWarn(...args: any[]) {
   if (import.meta.env.DEV) console.warn(...args);
@@ -5276,109 +5277,38 @@ async function restoreSession(): Promise<void> {
 /** Aplica o tema (claro/escuro) ao elemento <html> e persiste a escolha */
 function applyTheme(theme: "light" | "dark") {
   document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  document.documentElement.style.colorScheme = theme;
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (error) {
+    devWarn("Não foi possível salvar o tema:", error);
+  }
 }
 
-function handleThemeTransition(nextTheme: "light" | "dark", event: MouseEvent) {
-  const isDark = nextTheme === "dark";
-  const doc = document as any;
-
-  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    applyTheme(nextTheme);
-    render();
-    return;
-  }
-
-  const x = event.clientX || window.innerWidth / 2;
-  const y = event.clientY || window.innerHeight / 2;
-
-  // Halo e partículas acompanham a origem do clique sem manter animações no DOM.
-  const flare = document.createElement("div");
-  flare.className = `theme-transition-flare ${isDark ? "to-dark" : "to-light"}`;
-  flare.style.setProperty("--theme-x", `${x}px`);
-  flare.style.setProperty("--theme-y", `${y}px`);
-  flare.setAttribute("aria-hidden", "true");
-  flare.innerHTML = `
-    <span class="theme-transition-aurora"></span>
-    <span class="theme-transition-core"></span>
-    <span class="theme-transition-ring"></span>
-    <span class="theme-transition-ring secondary"></span>
-    <span class="theme-transition-lens"></span>
-    ${Array.from({ length: 18 }, (_, index) =>
-      `<i style="--particle-angle:${index * 20}deg;--particle-delay:${index * 13}ms;--particle-distance:${54 + (index % 4) * 20}px;--particle-size:${3 + (index % 3) * 2}px"></i>`
-    ).join("")}
-  `;
-  document.body.appendChild(flare);
-  window.setTimeout(() => flare.remove(), 1450);
-
-  if (!doc.startViewTransition) {
-    flare.classList.add("fallback");
-    window.setTimeout(() => {
-      applyTheme(nextTheme);
-      render();
-    }, 180);
-    return;
-  }
-
-  const endRadius = Math.hypot(
-    Math.max(x, innerWidth - x),
-    Math.max(y, innerHeight - y)
-  );
-
-  const transition = doc.startViewTransition(() => {
-    applyTheme(nextTheme);
-    render();
+function updateThemeToggleButtons(theme: "light" | "dark") {
+  const iconName = theme === "dark" ? "sun" : "moon";
+  const label = theme === "dark" ? "Alternar para modo claro" : "Alternar para modo escuro";
+  document.querySelectorAll<HTMLButtonElement>("#toggle-theme-top, #login-theme-toggle").forEach((button) => {
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    button.innerHTML = `<i data-lucide="${iconName}"></i>`;
   });
+  createIcons({ icons: usedIcons, nameAttr: "data-lucide" });
+}
 
-  transition.ready.then(() => {
-    document.documentElement.animate(
-      [
-        {
-          clipPath: `circle(0px at ${x}px ${y}px)`,
-          filter: isDark ? "brightness(1.35) saturate(1.35)" : "brightness(1.8) saturate(0.8)",
-          transform: "scale(1.012)"
-        },
-        {
-          clipPath: `circle(${endRadius * 0.42}px at ${x}px ${y}px)`,
-          filter: "brightness(1.08) saturate(1.15)",
-          offset: 0.46
-        },
-        {
-          clipPath: `circle(${endRadius * 0.7}px at ${x}px ${y}px)`,
-          filter: isDark
-            ? "brightness(.92) saturate(1.28) hue-rotate(5deg)"
-            : "brightness(1.18) saturate(1.08) hue-rotate(-4deg)",
-          transform: "scale(1.004)",
-          offset: 0.72
-        },
-        {
-          clipPath: `circle(${endRadius}px at ${x}px ${y}px)`,
-          filter: "brightness(1) saturate(1)",
-          transform: "scale(1)"
-        }
-      ],
-      {
-        duration: 1180,
-        easing: "cubic-bezier(.16,.76,.18,1)",
-        pseudoElement: "::view-transition-new(root)"
-      }
-    );
+function handleThemeTransition(nextTheme: "light" | "dark", _event?: MouseEvent) {
+  const root = document.documentElement;
+  if (root.getAttribute("data-theme") === nextTheme) return;
 
-    document.documentElement.animate(
-      [
-        { opacity: 1, filter: "blur(0) saturate(1)", transform: "scale(1)" },
-        { opacity: 0.86, filter: "blur(1px) saturate(1.22)", transform: "scale(.995)", offset: .35 },
-        { opacity: 0.58, filter: "blur(3px) saturate(.82)", transform: "scale(.978)" }
-      ],
-      {
-        duration: 960,
-        easing: "cubic-bezier(.4,0,.2,1)",
-        pseudoElement: "::view-transition-old(root)"
-      }
-    );
-  }).catch(() => {
-    flare.remove();
-  });
+  root.classList.add("theme-switching");
+  applyTheme(nextTheme);
+  updateThemeToggleButtons(nextTheme);
+
+  if (themeSwitchTimer) window.clearTimeout(themeSwitchTimer);
+  themeSwitchTimer = window.setTimeout(() => {
+    root.classList.remove("theme-switching");
+    themeSwitchTimer = undefined;
+  }, 120);
 }
 
 /** Gerencia os eventos da tela de configurações */
