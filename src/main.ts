@@ -83,11 +83,13 @@ const MB_2 = MAX_ATTACHMENT_BYTES;
 const APP_VERSION = "1.1";
 const CURRENT_RELEASE_NOTE_VERSION = "v1.1";
 const THEME_STORAGE_KEY = "crq-theme";
+const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
 const TIC_DASHBOARD_WIDGET_ORDER = ["category", "department", "requester", "status"] as const;
 type TicDashboardWidgetId = typeof TIC_DASHBOARD_WIDGET_ORDER[number];
 let releaseNoteShownThisSession = false;
 let themeSwitchTimer: number | undefined;
+let themeOverlayTimer: number | undefined;
 
 function devWarn(...args: any[]) {
   if (import.meta.env.DEV) console.warn(...args);
@@ -167,6 +169,7 @@ const usedIcons = {
 };
 
 // Elemento principal onde a aplicação é desenhada
+document.documentElement.classList.add(LOW_POWER_MODE_CLASS);
 const app = document.querySelector<HTMLDivElement>("#app");
 
 // Textos amigáveis para exibir status, prioridades e perfis
@@ -5296,11 +5299,28 @@ function updateThemeToggleButtons(theme: "light" | "dark") {
   createIcons({ icons: usedIcons, nameAttr: "data-lucide" });
 }
 
+function showLightweightThemeOverlay(nextTheme: "light" | "dark") {
+  const previousOverlay = document.querySelector(".theme-lite-overlay");
+  previousOverlay?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.className = `theme-lite-overlay to-${nextTheme}`;
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.appendChild(overlay);
+
+  if (themeOverlayTimer) window.clearTimeout(themeOverlayTimer);
+  themeOverlayTimer = window.setTimeout(() => {
+    overlay.remove();
+    themeOverlayTimer = undefined;
+  }, 150);
+}
+
 function handleThemeTransition(nextTheme: "light" | "dark", _event?: MouseEvent) {
   const root = document.documentElement;
   if (root.getAttribute("data-theme") === nextTheme) return;
 
   root.classList.add("theme-switching");
+  showLightweightThemeOverlay(nextTheme);
   applyTheme(nextTheme);
   updateThemeToggleButtons(nextTheme);
 
@@ -5308,7 +5328,7 @@ function handleThemeTransition(nextTheme: "light" | "dark", _event?: MouseEvent)
   themeSwitchTimer = window.setTimeout(() => {
     root.classList.remove("theme-switching");
     themeSwitchTimer = undefined;
-  }, 120);
+  }, 80);
 }
 
 /** Gerencia os eventos da tela de configurações */

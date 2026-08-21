@@ -9515,3 +9515,161 @@ body:not(.has-authenticated-shell) .a11y-panel {
     justify-content: space-between;
   }
 }
+
+/* 46. Modo leve: prioriza resposta instantanea em computadores modestos. */
+.theme-lite-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  background: rgba(2, 8, 23, 0.08);
+  opacity: 0;
+}
+
+.theme-lite-overlay.to-light {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+html.theme-switching .theme-lite-overlay {
+  display: block !important;
+  animation: theme-lite-fade 140ms ease-out both !important;
+  transition: none !important;
+}
+
+@keyframes theme-lite-fade {
+  0% { opacity: 0.16; }
+  100% { opacity: 0; }
+}
+
+html.low-power-mode {
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --ui-shadow: none;
+  --ui-shadow-hover: none;
+  scroll-behavior: auto;
+}
+
+html.low-power-mode body,
+html.theme-switching body {
+  background: var(--bg) !important;
+  background-attachment: scroll !important;
+  background-size: auto !important;
+  animation: none !important;
+  transform: none !important;
+  backface-visibility: visible !important;
+  transition: none !important;
+}
+
+html.low-power-mode .tech-bg-overlay,
+html.low-power-mode .login-visual-fx,
+html.low-power-mode .login-cursor-glow,
+html.low-power-mode .login-tech-grid,
+html.low-power-mode .login-scan-line,
+html.low-power-mode .login-particles,
+html.low-power-mode .login-orb,
+html.low-power-mode .login-page::before,
+html.low-power-mode .login-page::after,
+html.low-power-mode .workspace::before,
+html.low-power-mode .panel::before,
+html.low-power-mode .panel::after,
+html.low-power-mode .metric-card::before,
+html.low-power-mode .metric-card::after,
+html.theme-switching .tech-bg-overlay,
+html.theme-switching .login-visual-fx,
+html.theme-switching .login-cursor-glow,
+html.theme-switching .login-tech-grid,
+html.theme-switching .login-scan-line,
+html.theme-switching .login-particles,
+html.theme-switching .login-orb,
+html.theme-switching .login-page::before,
+html.theme-switching .login-page::after,
+html.theme-switching .workspace::before,
+html.theme-switching .panel::before,
+html.theme-switching .panel::after,
+html.theme-switching .metric-card::before,
+html.theme-switching .metric-card::after {
+  display: none !important;
+  animation: none !important;
+}
+
+html.low-power-mode .top-nav-bar,
+html.low-power-mode .sidebar,
+html.low-power-mode .panel,
+html.low-power-mode .box,
+html.low-power-mode .metric-card,
+html.low-power-mode .focus-panel,
+html.low-power-mode .ticket-card,
+html.low-power-mode .users-table-wrap,
+html.low-power-mode .login-card,
+html.low-power-mode .detail-close-button,
+html.low-power-mode .a11y-panel,
+html.low-power-mode .a11y-backdrop,
+html.low-power-mode .modal-overlay,
+html.low-power-mode .system-modal-overlay,
+html.low-power-mode .release-note-overlay,
+html.low-power-mode .onboarding-overlay,
+html.low-power-mode .knowledge-dialog-overlay,
+html.low-power-mode .knowledge-editor-actions,
+html.theme-switching .top-nav-bar,
+html.theme-switching .sidebar,
+html.theme-switching .panel,
+html.theme-switching .box,
+html.theme-switching .metric-card,
+html.theme-switching .focus-panel,
+html.theme-switching .ticket-card,
+html.theme-switching .users-table-wrap,
+html.theme-switching .login-card,
+html.theme-switching .detail-close-button,
+html.theme-switching .a11y-panel,
+html.theme-switching .a11y-backdrop,
+html.theme-switching .modal-overlay,
+html.theme-switching .system-modal-overlay,
+html.theme-switching .release-note-overlay,
+html.theme-switching .onboarding-overlay,
+html.theme-switching .knowledge-dialog-overlay,
+html.theme-switching .knowledge-editor-actions {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html.low-power-mode .content > *,
+html.low-power-mode .view-fade-in,
+html.low-power-mode .content.view-fade-in > *,
+html.low-power-mode .nav-button,
+html.low-power-mode .tech-pulse-dot,
+html.low-power-mode .welcome-content,
+html.low-power-mode .welcome-logo,
+html.low-power-mode .login-brand-header,
+html.low-power-mode .login-brand-hero,
+html.low-power-mode .login-card,
+html.low-power-mode .login-logo-wrap,
+html.low-power-mode .login-logo-wrap::after,
+html.low-power-mode .login-brand-hero .eyebrow,
+html.low-power-mode .login-brand-hero h1 span,
+html.low-power-mode .login-brand-hero h1 em,
+html.low-power-mode .login-benefits span,
+html.low-power-mode .login-submit-btn,
+html.low-power-mode .login-theme-toggle {
+  animation: none !important;
+}
+
+html.low-power-mode .panel,
+html.low-power-mode .metric-card,
+html.low-power-mode .focus-panel,
+html.low-power-mode .ticket-card,
+html.low-power-mode .login-card {
+  box-shadow: none !important;
+}
+
+html.low-power-mode .metric-card:hover,
+html.low-power-mode .ticket-card:hover,
+html.low-power-mode .focus-panel:hover,
+html.low-power-mode .login-submit-btn:hover,
+html.low-power-mode .login-theme-toggle:hover,
+html.low-power-mode .nav-button:hover,
+html.theme-switching .metric-card:hover,
+html.theme-switching .ticket-card:hover,
+html.theme-switching .focus-panel:hover {
+  transform: none !important;
+}
