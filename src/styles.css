@@ -5,8 +5,8 @@
   color-scheme: light;
 
   /* Typography */
-  --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-heading: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 
   /* Color Palette - Light Mode */
   --bg: #f4f7fb;
@@ -9121,5 +9121,203 @@ body:not(.has-authenticated-shell) .a11y-panel {
     left: 50% !important;
     width: calc(100vw - 20px) !important;
     max-height: calc(100dvh - 20px) !important;
+    transform: translate(-50%, -50%) !important;
+  }
+}
+
+/* 45. Tickets performance UX: pagination, focused action feedback and dashboard metric */
+.pagination-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pagination-size-control select {
+  min-height: 38px;
+  min-width: 78px;
+  padding: 0 34px 0 12px;
+  color: var(--text);
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.ticket-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 14px;
+}
+
+.pagination-pages {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.pagination-page {
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  color: var(--text-base);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pagination-page:hover {
+  color: #fff;
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.pagination-page.active {
+  color: #fff;
+  background: var(--brand-gradient);
+  border-color: transparent;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, 0.2);
+}
+
+.pagination-ellipsis {
+  color: var(--muted);
+  padding: 0 2px;
+}
+
+.requester-open-list {
+  display: grid;
+  gap: 10px;
+}
+
+.requester-open-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px 14px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.requester-open-row span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.requester-open-row strong,
+.requester-open-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.requester-open-row strong {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.requester-open-row small {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.requester-open-row b {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  min-height: 34px;
+  color: #fff;
+  background: var(--brand);
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+.ticket-action:not(:disabled) {
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.ticket-action:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.ticket-action[data-action="start"]:not(:disabled):hover {
+  color: #fff !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
+}
+
+.ticket-action[data-action="plan"]:not(:disabled):hover {
+  color: #fff !important;
+  background: #7c3aed !important;
+  border-color: #7c3aed !important;
+}
+
+.ticket-action[data-action="pend"]:not(:disabled):hover {
+  color: #1f2937 !important;
+  background: #facc15 !important;
+  border-color: #facc15 !important;
+}
+
+.ticket-action[data-action="solve"]:not(:disabled):hover,
+.ticket-action[data-action="reopen"]:not(:disabled):hover {
+  color: #fff !important;
+  background: var(--teal) !important;
+  border-color: var(--teal) !important;
+}
+
+.ticket-action[data-action="close"]:not(:disabled):hover {
+  color: #fff !important;
+  background: #0f766e !important;
+  border-color: #0f766e !important;
+}
+
+.ticket-action[data-action="delete"]:not(:disabled):hover {
+  color: #fff !important;
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+[data-theme="dark"] .pagination-size-control select,
+[data-theme="dark"] .pagination-page,
+[data-theme="dark"] .requester-open-row {
+  color: var(--text);
+  background-color: var(--surface-solid);
+  border-color: var(--ui-border-strong);
+}
+
+[data-theme="dark"] .requester-open-row strong {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .requester-open-row small {
+  color: var(--text-base) !important;
+}
+
+@media (max-width: 720px) {
+  .ticket-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ticket-page-nav {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pagination-size-control {
+    width: 100%;
+    justify-content: space-between;
   }
 }

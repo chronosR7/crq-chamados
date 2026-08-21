@@ -149,6 +149,8 @@ export interface RuntimeState {
   selectedTicketId?: number;
   ticketDetailOpen: boolean;
   ticketDetailWidth: number;
+  ticketPage: number;
+  ticketsPerPage: number;
   filters: Filters;
   authMode: AuthMode;
   loginRole: Role;

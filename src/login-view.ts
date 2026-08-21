@@ -30,7 +30,7 @@ export function renderLoginView(_data: AppData, authMode: AuthMode, loginRole: R
       <section class="login-brand" aria-label="CRQ-12">
         <div class="login-brand-header">
           <div class="login-logo-wrap">
-            <img class="login-logo" src="/crq12-logo.jpg" alt="CRQ-12" />
+            <img class="login-logo" src="/crq12-logo.jpg" alt="CRQ-12" loading="lazy" decoding="async" />
           </div>
           <span class="login-brand-tag">CRQ-12 · Atendimento interno</span>
         </div>

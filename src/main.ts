@@ -66,21 +66,6 @@ import {
   ZoomIn,
   createIcons
 } from "lucide";
-import {
-  AlignmentType,
-  BorderStyle,
-  Document,
-  HeadingLevel,
-  PageOrientation,
-  Packer,
-  Paragraph,
-  Table,
-  TableCell,
-  TableRow,
-  TextRun,
-  WidthType
-} from "docx";
-import "bulma/css/bulma.min.css";
 import "./styles.css";
 import { getRoleLabel } from './auth';
 import { createInitialData } from './local-data';
@@ -224,6 +209,8 @@ const defaultState: RuntimeState = {
   view: "dashboard",
   ticketDetailOpen: false,
   ticketDetailWidth: 430,
+  ticketPage: 1,
+  ticketsPerPage: 10,
   filters: {
     status: "todos",
     search: "",
@@ -1470,14 +1457,6 @@ function renderReports(user: User) {
   `;
 }
 
-function reportCell(text: string, bold = false, fill?: string) {
-  return new TableCell({
-    shading: fill ? { fill } : undefined,
-    margins: { top: 80, bottom: 80, left: 90, right: 90 },
-    children: [new Paragraph({ children: [new TextRun({ text, bold, size: 17, color: fill ? "FFFFFF" : "263548" })] })]
-  });
-}
-
 function reportPercent(value: number, total: number) {
   return total ? `${((value / total) * 100).toFixed(1).replace(".", ",")}%` : "0,0%";
 }
@@ -1524,6 +1503,25 @@ async function generateWordReport(user: User, startValue: string, endValue: stri
     ...data.departments.filter((department) => allowedIds.includes(department.id) && (departmentId === "todos" || department.id === departmentId)).map((department) => ({ group: "Departamento", label: department.name, count: tickets.filter((ticket) => ticket.departmentId === department.id).length }))
   ].filter((item) => item.count > 0);
 
+  const {
+    AlignmentType,
+    BorderStyle,
+    Document,
+    HeadingLevel,
+    PageOrientation,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    TextRun,
+    WidthType
+  } = await import("docx");
+  const reportCell = (text: string, bold = false, fill?: string) => new TableCell({
+    shading: fill ? { fill } : undefined,
+    margins: { top: 80, bottom: 80, left: 90, right: 90 },
+    children: [new Paragraph({ children: [new TextRun({ text, bold, size: 17, color: fill ? "FFFFFF" : "263548" })] })]
+  });
   const heading = (text: string) => new Paragraph({ text, heading: HeadingLevel.HEADING_2, spacing: { before: 260, after: 120 } });
   const tableBorders = { style: BorderStyle.SINGLE, size: 2, color: "B8C7D9" };
   const ticketRows = [
@@ -1648,12 +1646,19 @@ function renderDepartmentChart(tickets: Ticket[]) {
 function renderCleanDashboard(user: User) {
   let tickets = visibleTickets();
 
-  // Aplica os filtros globais ativados no Dashboard
-  if (state.filters.departmentId !== "todos") {
-    tickets = tickets.filter((t) => t.departmentId === state.filters.departmentId);
-  }
-  if (state.filters.requesterId !== "todos") {
-    tickets = tickets.filter((t) => t.requesterId === state.filters.requesterId);
+  if (user.role === "gestor") {
+    tickets = tickets.filter((ticket) => ticket.departmentId === user.departmentId);
+    if (state.filters.requesterId !== "todos") {
+      tickets = tickets.filter((ticket) => ticket.requesterId === state.filters.requesterId);
+    }
+  } else {
+    // Aplica os filtros globais ativados no Dashboard
+    if (state.filters.departmentId !== "todos") {
+      tickets = tickets.filter((t) => t.departmentId === state.filters.departmentId);
+    }
+    if (state.filters.requesterId !== "todos") {
+      tickets = tickets.filter((t) => t.requesterId === state.filters.requesterId);
+    }
   }
 
   const openTickets = tickets.filter((t) => !["solucionado", "fechado", "excluido"].includes(t.status));
@@ -1713,6 +1718,8 @@ function renderCleanDashboard(user: User) {
           </div>
           ${renderDepartmentChart(tickets)}
         </section>
+
+        ${renderOpenTicketsByRequesterWidget(tickets)}
       </div>
 
       <div style="margin-top: 12px;">
@@ -1786,7 +1793,48 @@ function renderCleanDashboard(user: User) {
         </div>
         ${renderRecentList(tickets.slice(0, 4))}
       </section>
+
+      ${renderOpenTicketsByRequesterWidget(tickets)}
     </div>
+  `;
+}
+
+function renderOpenTicketsByRequesterWidget(tickets: Ticket[]) {
+  const openTickets = tickets.filter((ticket) => !["solucionado", "fechado", "excluido"].includes(ticket.status));
+  const grouped = Array.from(openTickets.reduce((acc, ticket) => {
+    acc.set(ticket.requesterId, (acc.get(ticket.requesterId) ?? 0) + 1);
+    return acc;
+  }, new Map<string, number>()))
+    .map(([userId, count]) => ({
+      user: userById(userId),
+      count
+    }))
+    .sort((first, second) => second.count - first.count || (first.user?.fullName ?? "").localeCompare(second.user?.fullName ?? "", "pt-BR"))
+    .slice(0, 8);
+
+  return `
+    <section class="panel">
+      <div class="panel-header compact-header">
+        <div>
+          <span class="section-kicker">Usuários</span>
+          <h2>Chamados abertos por usuário</h2>
+        </div>
+        <i data-lucide="users" style="color: var(--brand);"></i>
+      </div>
+      ${grouped.length ? `
+        <div class="requester-open-list">
+          ${grouped.map((item) => `
+            <div class="requester-open-row">
+              <span>
+                <strong>${escapeHtml(item.user?.fullName ?? "Usuário removido")}</strong>
+                <small>${escapeHtml(departmentById(item.user?.departmentId)?.name ?? "Sem departamento")}</small>
+              </span>
+              <b>${item.count}</b>
+            </div>
+          `).join("")}
+        </div>
+      ` : `<p class="empty-state">Nenhum chamado aberto no filtro atual.</p>`}
+    </section>
   `;
 }
 
@@ -1834,6 +1882,11 @@ function renderTickets(user: User) {
   const tickets = filteredTickets().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   const selected = visibleTickets().find((t) => t.id === state.selectedTicketId);
   const detailOpen = state.ticketDetailOpen && Boolean(selected);
+  const totalPages = Math.max(1, Math.ceil(tickets.length / state.ticketsPerPage));
+  const currentPage = Math.min(Math.max(1, state.ticketPage), totalPages);
+  if (state.ticketPage !== currentPage) state.ticketPage = currentPage;
+  const pageStart = (currentPage - 1) * state.ticketsPerPage;
+  const pageTickets = tickets.slice(pageStart, pageStart + state.ticketsPerPage);
 
   return `
     <section class="panel">
@@ -1854,8 +1907,15 @@ function renderTickets(user: User) {
       <div>
         <span class="section-kicker">Resultado</span>
         <h2>${tickets.length} chamado${tickets.length === 1 ? "" : "s"}</h2>
+        <small>${tickets.length ? `Exibindo ${pageStart + 1}-${pageStart + pageTickets.length} de ${tickets.length}` : "Nenhum item para exibir"}</small>
       </div>
       <div class="row-actions">
+        <label class="pagination-size-control">
+          Itens por página
+          <select id="tickets-page-size">
+            ${[10, 25, 50].map((size) => `<option value="${size}" ${state.ticketsPerPage === size ? "selected" : ""}>${size}</option>`).join("")}
+          </select>
+        </label>
         ${selected && !detailOpen ? `
           <button class="ghost-button" id="toggle-ticket-detail" type="button">
             <i data-lucide="panel-right-open"></i>
@@ -1870,7 +1930,8 @@ function renderTickets(user: User) {
         <div class="table-hint">
           <span>Clique em uma linha para abrir o chamado na lateral.</span>
         </div>
-        ${renderTicketTable(tickets)}
+        ${renderTicketTable(pageTickets)}
+        ${renderTicketPagination(tickets.length, currentPage, totalPages)}
       </section>
       ${detailOpen && selected ? `
         <div
@@ -1990,6 +2051,29 @@ function renderTicketTable(tickets: Ticket[]) {
   `;
 }
 
+function renderTicketPagination(totalItems: number, currentPage: number, totalPages: number) {
+  if (totalItems <= state.ticketsPerPage) return "";
+  const pages = Array.from({ length: totalPages }, (_, index) => index + 1)
+    .filter((page) => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1);
+  const pageButtons = pages.map((page, index) => {
+    const previous = pages[index - 1];
+    const spacer = previous && page - previous > 1 ? `<span class="pagination-ellipsis">...</span>` : "";
+    return `${spacer}<button class="pagination-page ${page === currentPage ? "active" : ""}" type="button" data-ticket-page="${page}" aria-current="${page === currentPage ? "page" : "false"}">${page}</button>`;
+  }).join("");
+
+  return `
+    <nav class="ticket-pagination" aria-label="Paginação de chamados">
+      <button class="ghost-button compact-button ticket-page-nav" type="button" data-ticket-page="${currentPage - 1}" ${currentPage === 1 ? "disabled" : ""}>
+        Anterior
+      </button>
+      <div class="pagination-pages">${pageButtons}</div>
+      <button class="ghost-button compact-button ticket-page-nav" type="button" data-ticket-page="${currentPage + 1}" ${currentPage === totalPages ? "disabled" : ""}>
+        Próxima
+      </button>
+    </nav>
+  `;
+}
+
 /** Renderiza a view detalhada de um chamado selecionado */
 function renderTicketDetail(ticket: Ticket, user: User) {
   const requester = userById(ticket.requesterId);
@@ -2078,7 +2162,8 @@ function renderTicActions(ticket: Ticket) {
   const ticUsers = data.users.filter((u) => u.role === "tic" && u.active);
   const reopenLocked = ticketRequiresReopen(ticket);
   const lockedAttr = reopenLocked ? "disabled aria-disabled=\"true\"" : "";
-  const startDisabledAttr = reopenLocked || ticket.status !== "novo" ? "disabled aria-disabled=\"true\"" : "";
+  const canStartTicket = ticket.status === "novo" || ticket.status === "pendente";
+  const startDisabledAttr = reopenLocked || !canStartTicket ? "disabled aria-disabled=\"true\"" : "";
   const lockedLabel = ticket.status === "fechado" ? "Chamado fechado" : "Chamado solucionado";
   return `
     <div class="tic-actions ${reopenLocked ? "ticket-locked" : ""}">
@@ -2180,28 +2265,20 @@ function dashboardRequesterUsers(allowedDepartmentIds: string[]) {
 }
 
 function renderManagerFilters(user: User) {
-  const depts = visibleDepartmentIds(user);
-  const isDeptActive = state.filters.departmentId !== "todos";
+  const depts = [user.departmentId].filter(Boolean);
   const isUserActive = state.filters.requesterId !== "todos";
-  const hasActiveFilters = isDeptActive || isUserActive;
+  const hasActiveFilters = isUserActive;
 
   return `
     <div class="dashboard-filter-bar">
       <div class="dash-filter-group">
         <div class="dash-filter-label">
           <i data-lucide="list-filter"></i>
-          <span>Filtros do Painel:</span>
+          <span>Departamento do gestor:</span>
         </div>
-        ${depts.length > 1 ? `
-          <select id="dashboard-department-filter" class="custom-dash-select" aria-label="Departamento">
-            <option value="todos">Seus departamentos</option>
-            ${depts.map((dId) => `<option value="${dId}" ${state.filters.departmentId === dId ? "selected" : ""}>${escapeHtml(departmentById(dId)?.name ?? "")}</option>`).join("")}
-          </select>
-        ` : `
-          <div class="dept-pill-badge">
-            <span>${escapeHtml(departmentById(depts[0])?.name ?? "")}</span>
-          </div>
-        `}
+        <div class="dept-pill-badge">
+          <span>${escapeHtml(departmentById(user.departmentId)?.name ?? "Sem departamento")}</span>
+        </div>
         <select id="dashboard-requester-filter" class="custom-dash-select" aria-label="Usuário">
           <option value="todos">Todos os colaboradores</option>
           ${dashboardRequesterUsers(depts)
@@ -3121,6 +3198,7 @@ function bindEvents() {
       state.view = "tickets";
       state.selectedTicketId = undefined;
       state.ticketDetailOpen = false;
+      state.ticketPage = 1;
       render();
     });
   });
@@ -3763,6 +3841,9 @@ function openTicket(ticketId: number) {
   state.selectedTicketId = ticketId;
   state.view = "tickets";
   state.ticketDetailOpen = true;
+  const currentTickets = filteredTickets().sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  const ticketIndex = currentTickets.findIndex((item) => item.id === ticketId);
+  if (ticketIndex >= 0) state.ticketPage = Math.floor(ticketIndex / state.ticketsPerPage) + 1;
   render();
 }
 
@@ -3770,6 +3851,7 @@ function openTicket(ticketId: number) {
 function bindFilters() {
   const handleSearchInput = (val: string) => {
     state.filters.search = val;
+    state.ticketPage = 1;
     if (state.view !== "tickets") state.view = "tickets";
     const remaining = filteredTickets();
     if (state.selectedTicketId && !remaining.some((t) => t.id === state.selectedTicketId)) {
@@ -3795,6 +3877,7 @@ function bindFilters() {
     const select = document.querySelector<HTMLSelectElement>(selector);
     select?.addEventListener("change", () => {
       update(select.value as T);
+      state.ticketPage = 1;
       state.selectedTicketId = undefined;
       state.ticketDetailOpen = false;
       render();
@@ -3829,13 +3912,31 @@ function bindFilters() {
     };
     state.selectedTicketId = undefined;
     state.ticketDetailOpen = false;
+    state.ticketPage = 1;
     render();
   });
 
   document.querySelector<HTMLButtonElement>("#reset-dashboard-filters")?.addEventListener("click", () => {
     state.filters.departmentId = "todos";
     state.filters.requesterId = "todos";
+    state.ticketPage = 1;
     render();
+  });
+
+  document.querySelector<HTMLSelectElement>("#tickets-page-size")?.addEventListener("change", (event) => {
+    const nextSize = Number((event.currentTarget as HTMLSelectElement).value);
+    state.ticketsPerPage = [10, 25, 50].includes(nextSize) ? nextSize : 10;
+    state.ticketPage = 1;
+    render();
+  });
+
+  document.querySelectorAll<HTMLButtonElement>("[data-ticket-page]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const nextPage = Number(button.dataset.ticketPage);
+      if (!Number.isFinite(nextPage) || button.disabled) return;
+      state.ticketPage = Math.max(1, nextPage);
+      render();
+    });
   });
 }
 
@@ -3949,11 +4050,47 @@ function bindTicketForms() {
 
   fileInput?.addEventListener("change", () => {
     const files = Array.from(fileInput.files ?? []);
+    mergeSelectedFiles(files);
+    fileInput.value = "";
+  });
+
+  function mergeSelectedFiles(files: File[]) {
     const invalid = files.map(validateAttachment).filter(Boolean) as string[];
     if (invalid.length) showSystemAlert(invalid.join("\n"));
-    selectedFormFiles = [...selectedFormFiles, ...files.filter((file) => !validateAttachment(file))];
-    fileInput.value = "";
+
+    const validFiles = files.filter((file) => !validateAttachment(file));
+    const existingKeys = new Set(selectedFormFiles.map((file) => `${file.name}:${file.size}:${file.lastModified}`));
+    const dedupedFiles = validFiles.filter((file) => {
+      const key = `${file.name}:${file.size}:${file.lastModified}`;
+      if (existingKeys.has(key)) return false;
+      existingKeys.add(key);
+      return true;
+    });
+
+    selectedFormFiles = [...selectedFormFiles, ...dedupedFiles];
     updateFilePreviews();
+  }
+
+  document.querySelector<HTMLFormElement>("#new-ticket-form")?.addEventListener("paste", (event) => {
+    const items = Array.from(event.clipboardData?.items ?? []);
+    const pastedImages = items
+      .filter((item) => item.kind === "file" && item.type.startsWith("image/"))
+      .map((item, index) => {
+        const file = item.getAsFile();
+        if (!file) return undefined;
+        const extension = (file.type.split("/").pop() || "png").replace("jpeg", "jpg");
+        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+        return new File([file], `clipboard-${timestamp}-${index + 1}.${extension}`, {
+          type: file.type || "image/png",
+          lastModified: Date.now()
+        });
+      })
+      .filter((file): file is File => Boolean(file));
+
+    if (!pastedImages.length) return;
+    event.preventDefault();
+    mergeSelectedFiles(pastedImages);
+    showSystemAlert(`${pastedImages.length} imagem(ns) da área de transferência anexada(s).`);
   });
 
   document.querySelector<HTMLFormElement>("#new-ticket-form")?.addEventListener("submit", async (event) => {
@@ -4269,7 +4406,7 @@ function handleTicketAction(action: string) {
   }
 
   if (ticketRequiresReopen(ticket)) return;
-  if (action === "start" && ticket.status !== "novo") return;
+  if (action === "start" && !["novo", "pendente"].includes(ticket.status)) return;
 
   if (action === "delete") {
     showSystemConfirm(`Tem certeza que deseja excluir o chamado #${ticket.id}? Ele será movido para a lixeira.`, () => {
@@ -4342,18 +4479,19 @@ function handleTicketAction(action: string) {
   if (action === "close") {
     showSystemPrompt(
       `Fechar Chamado #${ticket.id}`,
-      "Especifique o motivo do fechamento sem solução:",
+      "Informe a solução ou o motivo do encerramento:",
       "textarea",
       (reason) => {
         updateSelectedTicket((t, user) => {
           const timestamp = nowIso();
-          t.status = "fechado";
+          t.status = "solucionado";
           t.updatedAt = timestamp;
-          t.closedAt = timestamp;
+          t.solvedAt = timestamp;
+          t.closedAt = undefined;
 
-          const msg = `[Fechamento sem solução]: ${reason}`;
-          t.events.push({ id: makeId("evt"), actorId: user.id, type: "Fechamento", message: msg, createdAt: timestamp });
-          notifyTicket(t, `Chamado #${ticket.id} fechado`, `Chamado fechado sem solução. Motivo: ${reason}`);
+          const msg = `[Encerramento]: ${reason}`;
+          t.events.push({ id: makeId("evt"), actorId: user.id, type: "Solução", message: msg, createdAt: timestamp });
+          notifyTicket(t, `Chamado #${ticket.id} solucionado`, `Chamado encerrado como solucionado. Motivo: ${reason}`);
           keepTicketInFocus(t);
         });
       }
