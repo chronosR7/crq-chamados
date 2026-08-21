@@ -9673,3 +9673,12 @@ html.theme-switching .ticket-card:hover,
 html.theme-switching .focus-panel:hover {
   transform: none !important;
 }
+
+.login-brand-tag,
+[data-theme="light"] .login-brand-tag,
+[data-theme="dark"] .login-brand-tag {
+  color: #111827 !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(17, 24, 39, 0.14) !important;
+  text-shadow: none !important;
+}
