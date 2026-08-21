@@ -5224,15 +5224,54 @@ function clearInvalidSession(): boolean {
   return false;
 }
 
+function hasAuthLinkHint() {
+  return isRecoveryLinkDetected ||
+    window.location.hash.includes('type=recovery') ||
+    window.location.search.includes('type=recovery') ||
+    window.location.hash.includes('type=invite') ||
+    window.location.search.includes('type=invite') ||
+    window.location.hash.includes('type=signup') ||
+    window.location.search.includes('type=signup') ||
+    window.location.href.includes('type=recovery') ||
+    window.location.href.includes('type=invite') ||
+    window.location.href.includes('type=signup');
+}
+
+function enterPasswordUpdateMode() {
+  setCurrentUserId(undefined);
+  state.authMode = 'update-password';
+  isRecoveryLinkDetected = false;
+  if (window.location.hash || window.location.search.includes('type=')) {
+    try {
+      history.replaceState(null, '', window.location.pathname);
+    } catch (e) {}
+  }
+}
+
 // ===== RESTORE SESSION =====
-// Usa onAuthStateChange para capturar o evento PASSWORD_RECOVERY corretamente.
-// Com detectSessionInUrl: true, o Supabase processa o token da URL antes do
-// nosso código executar e limpa o hash — por isso checar o hash diretamente
-// não funciona. O onAuthStateChange é a única forma confiável de interceptar.
+// O F5 precisa ser rápido: primeiro tentamos ler a sessão já persistida no
+// localStorage do Supabase. Só esperamos eventos quando a URL indica fluxo de
+// recuperação/convite, onde o Supabase precisa processar tokens da URL.
 async function restoreSession(): Promise<void> {
   if (!supabase || !isSupabaseConfigured()) {
     clearInvalidSession();
     return;
+  }
+
+  if (!hasAuthLinkHint() && state.authMode !== 'update-password') {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        setCurrentUserId(session.user.id);
+      } else {
+        clearInvalidSession();
+      }
+      return;
+    } catch (error) {
+      devWarn("Não foi possível ler a sessão persistida:", error);
+      clearInvalidSession();
+      return;
+    }
   }
 
   return new Promise<void>((resolve) => {
@@ -5245,37 +5284,19 @@ async function restoreSession(): Promise<void> {
       resolve();
     }
 
-    // Timeout de segurança: caso o evento não dispare em 5 s, tenta restaurar a sessão do localStorage
+    // Timeout curto: em F5 comum caímos no caminho rápido acima; aqui tratamos links especiais.
     const timer = setTimeout(() => {
       clearInvalidSession();
       done();
-    }, 5000);
+    }, 2500);
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange(async (event, session) => {
-      const isRecoveryUrl =
-        isRecoveryLinkDetected ||
-        event === 'PASSWORD_RECOVERY' ||
-        window.location.hash.includes('type=recovery') ||
-        window.location.search.includes('type=recovery') ||
-        window.location.hash.includes('type=invite') ||
-        window.location.search.includes('type=invite') ||
-        window.location.hash.includes('type=signup') ||
-        window.location.search.includes('type=signup') ||
-        window.location.href.includes('type=recovery') ||
-        window.location.href.includes('type=invite') ||
-        window.location.href.includes('type=signup');
+      const isRecoveryUrl = event === 'PASSWORD_RECOVERY' || hasAuthLinkHint();
 
       // PASSWORD_RECOVERY ou clique em link de e-mail (recovery/invite/signup): força exibição da tela de nova senha
       if (isRecoveryUrl || state.authMode === 'update-password') {
         clearTimeout(timer);
-        setCurrentUserId(undefined);
-        state.authMode = 'update-password';
-        isRecoveryLinkDetected = false;
-        if (window.location.hash || window.location.search.includes('type=')) {
-          try {
-            history.replaceState(null, '', window.location.pathname);
-          } catch (e) {}
-        }
+        enterPasswordUpdateMode();
         done();
         return;
       }
@@ -5291,40 +5312,9 @@ async function restoreSession(): Promise<void> {
       // Sessão válida (login normal ou sessão persistida no Supabase)
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
         clearTimeout(timer);
-        const userId = session.user.id;
-        const { data: profile } = await supabase!
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single();
-
-        if (profile) {
-          let existing = data.users.find(u => u.id === profile.id);
-          if (!existing) {
-            data.users.push({
-              id: profile.id,
-              fullName: profile.full_name,
-              email: profile.email,
-              role: profile.role as Role,
-              departmentId: profile.department_id,
-              managedDepartmentIds: profile.managed_department_ids || [],
-              active: profile.active !== false,
-              onboardingCompletedAt: profile.onboarding_completed_at || undefined,
-              acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined,
-              avatarUrl: profile.avatar_url || undefined
-            });
-          } else {
-            existing.avatarUrl = profile.avatar_url || undefined;
-          }
-          setCurrentUserId(userId);
-          done();
-          return;
-        }
-
-        // Sessão existe mas perfil não foi retornado do Supabase -> tenta restaurar sessão local
-        clearTimeout(timer);
-        clearInvalidSession();
+        setCurrentUserId(session.user.id);
         done();
+        return;
       }
     });
   });
@@ -5838,7 +5828,21 @@ function showTemporaryPasswordModal(password: string, title: string) {
 
 // ===== INICIALIZAÇÃO =====
 async function init() {
-  // Dados operacionais são carregados exclusivamente do Supabase.
+  // Preferências visuais ficam no navegador e devem ser aplicadas antes da rede.
+  const savedTheme = (localStorage.getItem(THEME_STORAGE_KEY) ?? "light") as "light" | "dark";
+  applyTheme(savedTheme);
+
+  try {
+    const savedCollapsed = localStorage.getItem("crq-sidebar-collapsed");
+    if (savedCollapsed !== null) {
+      state.sidebarCollapsed = savedCollapsed === "true";
+    }
+  } catch (err) {}
+
+  await restoreSession();
+  const restoredUserId = state.currentUserId;
+
+  // Dados operacionais são carregados exclusivamente do Supabase, uma vez por boot.
   const [supabaseData, remoteTutorials] = await Promise.all([
     loadDataFromSupabase(),
     loadKnowledgeTutorials()
@@ -5853,37 +5857,20 @@ async function init() {
   if (remoteTutorials.length) knowledgeTutorials = remoteTutorials;
 
   ensureSeedData();
-  await restoreSession();
-  const restoredUserId = state.currentUserId;
   if (restoredUserId) {
-    const authenticatedData = await loadDataFromSupabase();
-    if (authenticatedData) {
-      data = authenticatedData;
-      ensureSeedData();
-      if (data.users.some((user) => user.id === restoredUserId)) {
-        setCurrentUserId(restoredUserId);
-      } else {
-        setCurrentUserId(undefined);
-      }
+    if (data.users.some((user) => user.id === restoredUserId)) {
+      setCurrentUserId(restoredUserId);
+    } else {
+      setCurrentUserId(undefined);
     }
   }
+
   const restoredUser = currentUser();
   if (restoredUser) {
     rememberCurrentPendingPopupNotifications(restoredUser);
     void startRealtime(restoredUser);
   }
   restoreViewState();
-
-  // Preferências visuais ficam no navegador; os dados operacionais vêm do Supabase.
-  const savedTheme = (localStorage.getItem(THEME_STORAGE_KEY) ?? "light") as "light" | "dark";
-  applyTheme(savedTheme);
-
-  try {
-    const savedCollapsed = localStorage.getItem("crq-sidebar-collapsed");
-    if (savedCollapsed !== null) {
-      state.sidebarCollapsed = savedCollapsed === "true";
-    }
-  } catch (err) {}
 
   render();
   void autoStartDueScheduledTickets();
