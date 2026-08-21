@@ -9741,6 +9741,30 @@ html.theme-switching .focus-panel:hover {
   text-shadow: none !important;
 }
 
+[data-theme="dark"] .priority-media {
+  color: #082f49 !important;
+  background: #bae6fd !important;
+  border-color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .priority-baixa {
+  color: #052e16 !important;
+  background: #bbf7d0 !important;
+  border-color: #22c55e !important;
+}
+
+[data-theme="dark"] .priority-alta {
+  color: #451a03 !important;
+  background: #fde68a !important;
+  border-color: #f59e0b !important;
+}
+
+[data-theme="dark"] .priority-critica {
+  color: #450a0a !important;
+  background: #fecaca !important;
+  border-color: #ef4444 !important;
+}
+
 .avatar.ticket-avatar-sm {
   width: 34px;
   height: 34px;
