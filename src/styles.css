@@ -9198,35 +9198,134 @@ body:not(.has-authenticated-shell) .a11y-panel {
   gap: 10px;
 }
 
-.tic-dashboard-analytics {
-  align-items: start;
-}
-
-.tic-dashboard-analytics > .panel,
-.tic-dashboard-secondary > .panel {
-  min-height: 0;
-}
-
-.tic-dashboard-secondary {
+.tic-widget-board {
   display: grid;
-  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.22fr);
-  gap: 14px;
-  align-items: start;
-  margin-top: 12px;
-}
-
-.tic-dashboard-secondary .status-overview {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
 }
 
-.tic-dashboard-secondary .status-overview-item {
-  min-height: 86px;
+.tic-widget-card {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, opacity 150ms ease, transform 150ms ease;
+}
+
+.tic-widget-card:active {
+  cursor: grabbing;
+}
+
+.tic-widget-card.is-dragging {
+  opacity: 0.55;
+  transform: scale(0.985);
+}
+
+.tic-widget-card.is-drop-target {
+  border-color: var(--brand) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 22%, transparent) !important;
+}
+
+.tic-widget-card .panel-header {
+  min-height: 52px;
+  margin-bottom: 10px;
+}
+
+.tic-widget-card .panel-header > div {
+  min-width: 0;
+}
+
+.tic-widget-card .panel-header h2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tic-widget-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.tic-widget-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 46px;
+  min-height: 32px;
+  color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand) 28%, var(--line));
+  border-radius: 999px;
+  cursor: grab;
+}
+
+.tic-widget-drag-handle svg {
+  width: 15px;
+  height: 15px;
+}
+
+.tic-widget-drag-handle svg:first-child {
+  opacity: 0.9;
+}
+
+.tic-widget-drag-handle svg:last-child {
+  opacity: 0.55;
+}
+
+.tic-widget-card .tech-chart-container {
+  gap: 10px;
+}
+
+.tic-widget-card .tech-chart-row {
+  gap: 5px;
+}
+
+.tic-widget-card .tech-chart-label {
+  gap: 10px;
+  font-size: 0.78rem;
+}
+
+.tic-widget-card .tech-chart-label span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tic-widget-card .tech-chart-bar-bg {
+  height: 8px;
+}
+
+.tic-status-widget .status-overview {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  height: 100%;
+}
+
+.tic-status-widget .status-overview-item {
+  min-height: 0;
   align-items: flex-start;
   flex-direction: column;
+  padding: 12px;
 }
 
-.tic-dashboard-secondary .status-overview-item strong {
+.tic-status-widget .status-overview-item strong {
   align-self: flex-end;
+}
+
+.tic-requester-widget .requester-open-list {
+  gap: 8px;
+}
+
+.tic-requester-widget .requester-open-row {
+  padding: 10px 12px;
 }
 
 .requester-open-panel {
@@ -9361,19 +9460,30 @@ body:not(.has-authenticated-shell) .a11y-panel {
   color: var(--text-base) !important;
 }
 
+@media (max-width: 1320px) {
+  .tic-widget-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 720px) {
-  .tic-dashboard-secondary,
-  .tic-dashboard-secondary .status-overview {
+  .tic-widget-board,
+  .tic-status-widget .status-overview {
     grid-template-columns: 1fr;
   }
 
-  .tic-dashboard-secondary .status-overview-item {
+  .tic-widget-card {
+    aspect-ratio: auto;
+    min-height: 260px;
+  }
+
+  .tic-status-widget .status-overview-item {
     min-height: 58px;
     align-items: center;
     flex-direction: row;
   }
 
-  .tic-dashboard-secondary .status-overview-item strong {
+  .tic-status-widget .status-overview-item strong {
     align-self: auto;
   }
 

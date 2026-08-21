@@ -83,6 +83,9 @@ const MB_2 = MAX_ATTACHMENT_BYTES;
 const APP_VERSION = "1.1";
 const CURRENT_RELEASE_NOTE_VERSION = "v1.1";
 const THEME_STORAGE_KEY = "crq-theme";
+const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
+const TIC_DASHBOARD_WIDGET_ORDER = ["category", "department", "requester", "status"] as const;
+type TicDashboardWidgetId = typeof TIC_DASHBOARD_WIDGET_ORDER[number];
 let releaseNoteShownThisSession = false;
 
 function devWarn(...args: any[]) {
@@ -1642,6 +1645,61 @@ function renderDepartmentChart(tickets: Ticket[]) {
   `;
 }
 
+function isTicDashboardWidgetId(value: string): value is TicDashboardWidgetId {
+  return (TIC_DASHBOARD_WIDGET_ORDER as readonly string[]).includes(value);
+}
+
+function getTicDashboardWidgetOrder(): TicDashboardWidgetId[] {
+  try {
+    const savedOrder = JSON.parse(localStorage.getItem(TIC_DASHBOARD_ORDER_STORAGE_KEY) ?? "[]");
+    if (Array.isArray(savedOrder)) {
+      const validOrder = savedOrder.filter((item): item is TicDashboardWidgetId => typeof item === "string" && isTicDashboardWidgetId(item));
+      return [
+        ...validOrder,
+        ...TIC_DASHBOARD_WIDGET_ORDER.filter((item) => !validOrder.includes(item))
+      ];
+    }
+  } catch (error) {
+    devWarn("Não foi possível carregar a ordem do Painel TIC:", error);
+  }
+  return [...TIC_DASHBOARD_WIDGET_ORDER];
+}
+
+function saveTicDashboardWidgetOrder(order: TicDashboardWidgetId[]) {
+  try {
+    localStorage.setItem(TIC_DASHBOARD_ORDER_STORAGE_KEY, JSON.stringify(order));
+  } catch (error) {
+    devWarn("Não foi possível salvar a ordem do Painel TIC:", error);
+  }
+}
+
+function renderTicDashboardWidget(
+  id: TicDashboardWidgetId,
+  kicker: string,
+  title: string,
+  icon: string,
+  body: string,
+  extraClass = ""
+) {
+  return `
+    <section class="panel tic-widget-card ${extraClass}" data-tic-widget="${id}" draggable="true" aria-label="${escapeHtml(title)}">
+      <div class="panel-header compact-header">
+        <div>
+          <span class="section-kicker">${escapeHtml(kicker)}</span>
+          <h2>${escapeHtml(title)}</h2>
+        </div>
+        <span class="tic-widget-drag-handle" title="Arrastar quadro">
+          <i data-lucide="${icon}"></i>
+          <i data-lucide="sliders-horizontal"></i>
+        </span>
+      </div>
+      <div class="tic-widget-body">
+        ${body}
+      </div>
+    </section>
+  `;
+}
+
 /** Renderiza a view do dashboard com métricas e painéis de gráficos */
 function renderCleanDashboard(user: User) {
   let tickets = visibleTickets();
@@ -1667,6 +1725,14 @@ function renderCleanDashboard(user: User) {
   const critical = tickets.filter(ticketIsCritical);
 
   if (user.role === "tic") {
+    const ticDashboardWidgets: Record<TicDashboardWidgetId, string> = {
+      category: renderTicDashboardWidget("category", "Distribuição", "Chamados por Categoria", "pie-chart", renderCategoryChart(tickets)),
+      department: renderTicDashboardWidget("department", "Origem", "Volume por Departamento", "bar-chart-3", renderDepartmentChart(tickets)),
+      requester: renderTicDashboardWidget("requester", "Usuários", "Chamados abertos por usuário", "users", renderRequesterOpenContent(tickets), "tic-requester-widget"),
+      status: renderTicDashboardWidget("status", "Status Operacional", "Resumo Geral da Fila", "activity", renderStatusOverview(tickets), "tic-status-widget")
+    };
+    const widgetOrder = getTicDashboardWidgetOrder();
+
     return `
       <section class="focus-panel">
         <div>
@@ -1695,42 +1761,8 @@ function renderCleanDashboard(user: User) {
         ${metricCard("Encerrados", closedTickets.length, "circle-check")}
       </div>
 
-      <div class="dashboard-split tic-dashboard-analytics">
-        <section class="panel">
-          <div class="panel-header compact-header">
-            <div>
-              <span class="section-kicker">Distribuição</span>
-              <h2>Chamados por Categoria</h2>
-            </div>
-            <i data-lucide="pie-chart" style="color: var(--brand);"></i>
-          </div>
-          ${renderCategoryChart(tickets)}
-        </section>
-
-        <section class="panel">
-          <div class="panel-header compact-header">
-            <div>
-              <span class="section-kicker">Origem</span>
-              <h2>Volume por Departamento</h2>
-            </div>
-            <i data-lucide="bar-chart-3" style="color: var(--brand);"></i>
-          </div>
-          ${renderDepartmentChart(tickets)}
-        </section>
-      </div>
-
-      <div class="tic-dashboard-secondary">
-        ${renderOpenTicketsByRequesterWidget(tickets)}
-
-        <section class="panel">
-          <div class="panel-header compact-header">
-            <div>
-              <span class="section-kicker">Status Operacional</span>
-              <h2>Resumo Geral da Fila</h2>
-            </div>
-          </div>
-          ${renderStatusOverview(tickets)}
-        </section>
+      <div class="tic-widget-board" data-tic-widget-board>
+        ${widgetOrder.map((id) => ticDashboardWidgets[id]).join("")}
       </div>
     `;
   }
@@ -1798,7 +1830,7 @@ function renderCleanDashboard(user: User) {
   `;
 }
 
-function renderOpenTicketsByRequesterWidget(tickets: Ticket[]) {
+function renderRequesterOpenContent(tickets: Ticket[]) {
   const openTickets = tickets.filter((ticket) => !["solucionado", "fechado", "excluido"].includes(ticket.status));
   const grouped = Array.from(openTickets.reduce((acc, ticket) => {
     acc.set(ticket.requesterId, (acc.get(ticket.requesterId) ?? 0) + 1);
@@ -1811,6 +1843,27 @@ function renderOpenTicketsByRequesterWidget(tickets: Ticket[]) {
     .sort((first, second) => second.count - first.count || (first.user?.fullName ?? "").localeCompare(second.user?.fullName ?? "", "pt-BR"))
     .slice(0, 8);
 
+  return grouped.length ? `
+    <div class="requester-open-list">
+      ${grouped.map((item) => `
+        <div class="requester-open-row">
+          <span>
+            <strong>${escapeHtml(item.user?.fullName ?? "Usuário removido")}</strong>
+            <small>${escapeHtml(departmentById(item.user?.departmentId)?.name ?? "Sem departamento")}</small>
+          </span>
+          <b>${item.count}</b>
+        </div>
+      `).join("")}
+    </div>
+  ` : `
+    <div class="requester-open-empty">
+      <i data-lucide="check-check"></i>
+      <span>Nenhum chamado aberto no filtro atual.</span>
+    </div>
+  `;
+}
+
+function renderOpenTicketsByRequesterWidget(tickets: Ticket[]) {
   return `
     <section class="panel requester-open-panel">
       <div class="panel-header compact-header">
@@ -1820,24 +1873,7 @@ function renderOpenTicketsByRequesterWidget(tickets: Ticket[]) {
         </div>
         <i data-lucide="users" style="color: var(--brand);"></i>
       </div>
-      ${grouped.length ? `
-        <div class="requester-open-list">
-          ${grouped.map((item) => `
-            <div class="requester-open-row">
-              <span>
-                <strong>${escapeHtml(item.user?.fullName ?? "Usuário removido")}</strong>
-                <small>${escapeHtml(departmentById(item.user?.departmentId)?.name ?? "Sem departamento")}</small>
-              </span>
-              <b>${item.count}</b>
-            </div>
-          `).join("")}
-        </div>
-      ` : `
-        <div class="requester-open-empty">
-          <i data-lucide="check-check"></i>
-          <span>Nenhum chamado aberto no filtro atual.</span>
-        </div>
-      `}
+      ${renderRequesterOpenContent(tickets)}
     </section>
   `;
 }
@@ -3116,6 +3152,7 @@ function bindEvents() {
   document.querySelector<HTMLButtonElement>("#toggle-sidebar")?.addEventListener("click", toggleSidebar);
   document.querySelector<HTMLButtonElement>("#mobile-sidebar-toggle")?.addEventListener("click", toggleSidebar);
   document.querySelector<HTMLButtonElement>("#mobile-sidebar-backdrop")?.addEventListener("click", toggleSidebar);
+  bindTicDashboardWidgets();
 
   document.querySelectorAll<HTMLButtonElement>("[data-view]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -3939,6 +3976,57 @@ function bindFilters() {
       const nextPage = Number(button.dataset.ticketPage);
       if (!Number.isFinite(nextPage) || button.disabled) return;
       state.ticketPage = Math.max(1, nextPage);
+      render();
+    });
+  });
+}
+
+function bindTicDashboardWidgets() {
+  const board = document.querySelector<HTMLElement>("[data-tic-widget-board]");
+  if (!board) return;
+
+  const clearDropState = () => {
+    board.querySelectorAll<HTMLElement>("[data-tic-widget]").forEach((card) => {
+      card.classList.remove("is-drop-target", "is-dragging");
+    });
+  };
+
+  board.querySelectorAll<HTMLElement>("[data-tic-widget]").forEach((card) => {
+    card.addEventListener("dragstart", (event) => {
+      const widgetId = card.dataset.ticWidget ?? "";
+      if (!isTicDashboardWidgetId(widgetId)) return;
+      card.classList.add("is-dragging");
+      event.dataTransfer?.setData("text/plain", widgetId);
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    });
+
+    card.addEventListener("dragend", clearDropState);
+
+    card.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+      card.classList.add("is-drop-target");
+    });
+
+    card.addEventListener("dragleave", () => {
+      card.classList.remove("is-drop-target");
+    });
+
+    card.addEventListener("drop", (event) => {
+      event.preventDefault();
+      const sourceId = event.dataTransfer?.getData("text/plain") ?? "";
+      const targetId = card.dataset.ticWidget ?? "";
+      clearDropState();
+      if (!isTicDashboardWidgetId(sourceId) || !isTicDashboardWidgetId(targetId) || sourceId === targetId) return;
+
+      const order = getTicDashboardWidgetOrder();
+      const sourceIndex = order.indexOf(sourceId);
+      const targetIndex = order.indexOf(targetId);
+      if (sourceIndex < 0 || targetIndex < 0) return;
+
+      order.splice(sourceIndex, 1);
+      order.splice(targetIndex, 0, sourceId);
+      saveTicDashboardWidgetOrder(order);
       render();
     });
   });
