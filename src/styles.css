@@ -9198,6 +9198,42 @@ body:not(.has-authenticated-shell) .a11y-panel {
   gap: 10px;
 }
 
+.tic-dashboard-analytics {
+  align-items: start;
+}
+
+.tic-dashboard-analytics > .panel,
+.tic-dashboard-secondary > .panel {
+  min-height: 0;
+}
+
+.tic-dashboard-secondary {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.22fr);
+  gap: 14px;
+  align-items: start;
+  margin-top: 12px;
+}
+
+.tic-dashboard-secondary .status-overview {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tic-dashboard-secondary .status-overview-item {
+  min-height: 86px;
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.tic-dashboard-secondary .status-overview-item strong {
+  align-self: flex-end;
+}
+
+.requester-open-panel {
+  display: grid;
+  gap: 12px;
+}
+
 .requester-open-row {
   display: flex;
   align-items: center;
@@ -9242,6 +9278,25 @@ body:not(.has-authenticated-shell) .a11y-panel {
   background: var(--brand);
   border-radius: 999px;
   font-size: 0.9rem;
+}
+
+.requester-open-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 86px;
+  padding: 16px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+}
+
+.requester-open-empty svg {
+  width: 20px;
+  height: 20px;
+  color: var(--teal);
+  flex: 0 0 20px;
 }
 
 .ticket-action:not(:disabled) {
@@ -9291,7 +9346,8 @@ body:not(.has-authenticated-shell) .a11y-panel {
 
 [data-theme="dark"] .pagination-size-control select,
 [data-theme="dark"] .pagination-page,
-[data-theme="dark"] .requester-open-row {
+[data-theme="dark"] .requester-open-row,
+[data-theme="dark"] .requester-open-empty {
   color: var(--text);
   background-color: var(--surface-solid);
   border-color: var(--ui-border-strong);
@@ -9306,6 +9362,21 @@ body:not(.has-authenticated-shell) .a11y-panel {
 }
 
 @media (max-width: 720px) {
+  .tic-dashboard-secondary,
+  .tic-dashboard-secondary .status-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .tic-dashboard-secondary .status-overview-item {
+    min-height: 58px;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .tic-dashboard-secondary .status-overview-item strong {
+    align-self: auto;
+  }
+
   .ticket-pagination {
     align-items: stretch;
     flex-direction: column;

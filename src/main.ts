@@ -1695,8 +1695,7 @@ function renderCleanDashboard(user: User) {
         ${metricCard("Encerrados", closedTickets.length, "circle-check")}
       </div>
 
-      <!-- PAINÉIS DE GRÁFICOS: CATEGORIA E DEPARTAMENTO -->
-      <div class="dashboard-split">
+      <div class="dashboard-split tic-dashboard-analytics">
         <section class="panel">
           <div class="panel-header compact-header">
             <div>
@@ -1718,11 +1717,11 @@ function renderCleanDashboard(user: User) {
           </div>
           ${renderDepartmentChart(tickets)}
         </section>
-
-        ${renderOpenTicketsByRequesterWidget(tickets)}
       </div>
 
-      <div style="margin-top: 12px;">
+      <div class="tic-dashboard-secondary">
+        ${renderOpenTicketsByRequesterWidget(tickets)}
+
         <section class="panel">
           <div class="panel-header compact-header">
             <div>
@@ -1813,7 +1812,7 @@ function renderOpenTicketsByRequesterWidget(tickets: Ticket[]) {
     .slice(0, 8);
 
   return `
-    <section class="panel">
+    <section class="panel requester-open-panel">
       <div class="panel-header compact-header">
         <div>
           <span class="section-kicker">Usuários</span>
@@ -1833,7 +1832,12 @@ function renderOpenTicketsByRequesterWidget(tickets: Ticket[]) {
             </div>
           `).join("")}
         </div>
-      ` : `<p class="empty-state">Nenhum chamado aberto no filtro atual.</p>`}
+      ` : `
+        <div class="requester-open-empty">
+          <i data-lucide="check-check"></i>
+          <span>Nenhum chamado aberto no filtro atual.</span>
+        </div>
+      `}
     </section>
   `;
 }
