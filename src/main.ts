@@ -237,8 +237,43 @@ let pendingPopupUserId: string | undefined;
 let seenPendingPopupNotificationIds = new Set<string>();
 let scheduledTicketsCheckInFlight = false;
 
+function wait(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+}
+
+function remoteDataContainsUser(remote: AppData | null, userId?: string) {
+  if (!remote) return false;
+  if (!userId) return true;
+  return remote.users.some((user) => user.id === userId);
+}
+
+async function loadRemoteDataWithRetry(userId?: string, attempts = 3): Promise<AppData | null> {
+  let lastRemote: AppData | null = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const remote = await loadDataFromSupabase();
+    if (remoteDataContainsUser(remote, userId)) return remote;
+
+    lastRemote = remote;
+    if (attempt < attempts - 1) {
+      await wait(350 * (attempt + 1));
+    }
+  }
+
+  return remoteDataContainsUser(lastRemote, userId) ? lastRemote : null;
+}
+
+async function reloadOperationalDataForUser(userId: string, attempts = 3): Promise<User | undefined> {
+  const remote = await loadRemoteDataWithRetry(userId, attempts);
+  if (!remote) return undefined;
+
+  data = remote;
+  ensureSeedData();
+  return data.users.find((user) => user.id === userId);
+}
+
 async function refreshFromServer() {
-  const remote = await loadDataFromSupabase();
+  const remote = await loadRemoteDataWithRetry(state.currentUserId, 2);
   if (!remote) return;
   const selectedId = state.selectedTicketId;
   data = remote;
@@ -3695,12 +3730,22 @@ async function handleLogin(event: SubmitEvent) {
           avatarUrl: profile.avatar_url || undefined
         });
       }
+      const loadedUser = await reloadOperationalDataForUser(userId, 4);
+      if (!loadedUser) {
+        if (errorEl) {
+          errorEl.textContent = "Senha alterada, mas não foi possível carregar os dados do sistema. Recarregue a página e tente entrar novamente.";
+          errorEl.style.color = "#dc3545";
+        }
+        resetBtnState();
+        return;
+      }
+
       setCurrentUserId(userId);
-      rememberCurrentPendingPopupNotifications(existing);
+      rememberCurrentPendingPopupNotifications(loadedUser);
       state.authMode = "login";
       showSystemAlert("Senha alterada com sucesso! Seu novo acesso foi ativado.");
       render();
-      showWelcomeScreen(existing);
+      showWelcomeScreen(loadedUser);
       return;
     }
 
@@ -3899,6 +3944,17 @@ async function handleLogin(event: SubmitEvent) {
           authenticatedUser.avatarUrl = profile.avatar_url || undefined;
         }
       }
+
+      const loadedUser = await reloadOperationalDataForUser(authUserId, 4);
+      if (!loadedUser) {
+        if (errorEl) {
+          errorEl.textContent = "Login validado, mas os dados do sistema não carregaram. Recarregue a página e tente novamente para evitar abrir a plataforma zerada.";
+          errorEl.style.color = "#dc3545";
+        }
+        resetBtnState();
+        return;
+      }
+      authenticatedUser = loadedUser;
     } else {
       devWarn("Erro na autenticação Supabase:", error?.message);
       if (error) {
@@ -5871,6 +5927,20 @@ function showTemporaryPasswordModal(password: string, title: string) {
   overlay.querySelector("#close-temporary-password")?.addEventListener("click", () => overlay.remove());
 }
 
+function renderOperationalLoadFailure() {
+  if (!app) return;
+  app.innerHTML = `
+    <main class="login-page load-failure-page">
+      <section class="login-card load-failure-card" role="alert" aria-live="assertive">
+        <span class="section-kicker">Carregamento interrompido</span>
+        <h1>Não foi possível carregar os dados</h1>
+        <p class="empty-state">Sua sessão foi encontrada, mas o Supabase não entregou os chamados, usuários e departamentos necessários. Nenhum dado foi apagado; a plataforma bloqueou a abertura para não mostrar tudo zerado.</p>
+        <button class="primary-button" type="button" onclick="location.reload()">Tentar novamente</button>
+      </section>
+    </main>
+  `;
+}
+
 // ===== INICIALIZAÇÃO =====
 async function init() {
   // Preferências visuais ficam no navegador e devem ser aplicadas antes da rede.
@@ -5889,12 +5959,15 @@ async function init() {
 
   // Dados operacionais são carregados exclusivamente do Supabase, uma vez por boot.
   const [supabaseData, remoteTutorials] = await Promise.all([
-    loadDataFromSupabase(),
+    restoredUserId ? loadRemoteDataWithRetry(restoredUserId, 4) : loadDataFromSupabase(),
     loadKnowledgeTutorials()
   ]);
 
   if (supabaseData) {
     data = supabaseData;
+  } else if (restoredUserId) {
+    renderOperationalLoadFailure();
+    return;
   } else {
     devWarn('Não foi possível carregar os dados do Supabase. O modo local está desativado.');
   }
