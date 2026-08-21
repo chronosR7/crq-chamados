@@ -2142,6 +2142,7 @@ function renderTicketPagination(totalItems: number, currentPage: number, totalPa
 function renderTicketDetail(ticket: Ticket, user: User) {
   const requester = userById(ticket.requesterId);
   const assigned = userById(ticket.assignedId);
+  const requesterIdentity = requester ?? { fullName: "Usuário removido" };
   const interactionsLocked = ticketRequiresReopen(ticket);
   const lockedAttr = interactionsLocked ? "disabled aria-disabled=\"true\"" : "";
   return `
@@ -2151,6 +2152,15 @@ function renderTicketDetail(ticket: Ticket, user: User) {
         <h2>${escapeHtml(ticket.title)}</h2>
       </div>
       ${statusPill(ticket.status)}
+    </div>
+
+    <div class="ticket-created-by">
+      ${renderAvatarHTML(requesterIdentity, "ticket-avatar-md")}
+      <div class="ticket-identity-copy">
+        <span>Aberto por</span>
+        <strong>${escapeHtml(requesterIdentity.fullName)}</strong>
+        <small>${formatDate(ticket.createdAt)}</small>
+      </div>
     </div>
 
     ${ticket.plannedFor ? `
@@ -2208,12 +2218,20 @@ function renderTicketDetail(ticket: Ticket, user: User) {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .map((item) => {
         const eventAttachments = ticket.attachments.filter((attachment) => attachment.eventId === item.id);
+        const actor = userById(item.actorId);
+        const actorIdentity = actor ?? { fullName: "Sistema" };
         return `
-          <div class="timeline-item">
-            <strong>${escapeHtml(item.type)}</strong>
-            <p>${escapeHtml(item.message)}</p>
-            ${eventAttachments.length ? `<div class="attachment-list event-attachments">${renderAttachmentCards(eventAttachments)}</div>` : ""}
-            <small>${escapeHtml(userById(item.actorId)?.fullName ?? "Sistema")} · ${formatDate(item.createdAt)}</small>
+          <div class="timeline-item has-avatar">
+            <div class="timeline-avatar">${renderAvatarHTML(actorIdentity, "ticket-avatar-sm")}</div>
+            <div class="timeline-content">
+              <div class="timeline-heading">
+                <strong>${escapeHtml(item.type)}</strong>
+                <small>${formatDate(item.createdAt)}</small>
+              </div>
+              <p>${escapeHtml(item.message)}</p>
+              ${eventAttachments.length ? `<div class="attachment-list event-attachments">${renderAttachmentCards(eventAttachments)}</div>` : ""}
+              <small class="timeline-author">${escapeHtml(actorIdentity.fullName)}</small>
+            </div>
           </div>
         `;
       })
@@ -2394,12 +2412,21 @@ function renderTicDashboardFilters() {
 // ===== NOVO TICKET =====
 function renderNewTicket(user: User) {
   const userDepartments = linkedDepartments(user);
+  const primaryDepartment = departmentById(user.departmentId) ?? userDepartments[0];
   return `
     <section class="panel form-panel">
       <div class="panel-header">
         <div>
           <span class="section-kicker">Fila TIC</span>
           <h2>Novo chamado</h2>
+        </div>
+      </div>
+      <div class="ticket-creator-card">
+        ${renderAvatarHTML(user, "ticket-avatar-md")}
+        <div class="ticket-identity-copy">
+          <span>Solicitante</span>
+          <strong>${escapeHtml(user.fullName)}</strong>
+          <small>${escapeHtml(primaryDepartment?.name ?? "Sem departamento")}</small>
         </div>
       </div>
       <form id="new-ticket-form" class="ticket-form">
@@ -3605,7 +3632,8 @@ async function handleLogin(event: SubmitEvent) {
           managedDepartmentIds: profile.managed_department_ids || [],
           active: true,
           mustChangePassword: profile.must_change_password === true,
-          acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined
+          acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined,
+          avatarUrl: profile.avatar_url || undefined
         };
         data.users.push(existing);
       } else {
@@ -3618,7 +3646,8 @@ async function handleLogin(event: SubmitEvent) {
           managedDepartmentIds: profile.managed_department_ids || [],
           active: true,
           mustChangePassword: profile.must_change_password === true,
-          acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined
+          acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined,
+          avatarUrl: profile.avatar_url || undefined
         });
       }
       setCurrentUserId(userId);
@@ -3809,7 +3838,8 @@ async function handleLogin(event: SubmitEvent) {
             active: profile.active !== false,
             mustChangePassword: profile.must_change_password === true,
             onboardingCompletedAt: profile.onboarding_completed_at || undefined,
-            acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined
+            acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined,
+            avatarUrl: profile.avatar_url || undefined
           };
           data.users.push(authenticatedUser);
         } else {
@@ -3821,6 +3851,7 @@ async function handleLogin(event: SubmitEvent) {
           authenticatedUser.active = profile.active !== false;
           authenticatedUser.mustChangePassword = profile.must_change_password === true;
           authenticatedUser.acknowledgedReleaseVersion = profile.acknowledged_release_version || undefined;
+          authenticatedUser.avatarUrl = profile.avatar_url || undefined;
         }
       }
     } else {
@@ -5279,8 +5310,11 @@ async function restoreSession(): Promise<void> {
               managedDepartmentIds: profile.managed_department_ids || [],
               active: profile.active !== false,
               onboardingCompletedAt: profile.onboarding_completed_at || undefined,
-              acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined
+              acknowledgedReleaseVersion: profile.acknowledged_release_version || undefined,
+              avatarUrl: profile.avatar_url || undefined
             });
+          } else {
+            existing.avatarUrl = profile.avatar_url || undefined;
           }
           setCurrentUserId(userId);
           done();

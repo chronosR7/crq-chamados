@@ -9682,3 +9682,143 @@ html.theme-switching .focus-panel:hover {
   border-color: rgba(17, 24, 39, 0.14) !important;
   text-shadow: none !important;
 }
+
+.avatar.ticket-avatar-sm {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  box-shadow: none;
+}
+
+.avatar.ticket-avatar-md {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  font-size: 1rem;
+  box-shadow: none;
+}
+
+.ticket-created-by,
+.ticket-creator-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
+}
+
+.ticket-created-by {
+  margin: 0 0 14px;
+}
+
+.ticket-creator-card {
+  margin: 0 0 16px;
+}
+
+.ticket-identity-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ticket-identity-copy span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ticket-identity-copy strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-identity-copy small {
+  overflow: hidden;
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-item.has-avatar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.timeline-avatar {
+  display: flex;
+  padding-top: 1px;
+}
+
+.timeline-content {
+  min-width: 0;
+}
+
+.timeline-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.timeline-heading strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timeline-heading small,
+.timeline-author {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.timeline-heading small {
+  flex: 0 0 auto;
+}
+
+.timeline-author {
+  display: block;
+  margin-top: 6px;
+}
+
+[data-theme="dark"] .ticket-created-by,
+[data-theme="dark"] .ticket-creator-card {
+  background: var(--surface-soft);
+  border-color: var(--line);
+}
+
+[data-theme="dark"] .ticket-identity-copy strong,
+[data-theme="dark"] .timeline-heading strong {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .ticket-identity-copy span,
+[data-theme="dark"] .ticket-identity-copy small,
+[data-theme="dark"] .timeline-heading small,
+[data-theme="dark"] .timeline-author {
+  color: var(--text-base) !important;
+}
+
+@media (max-width: 520px) {
+  .timeline-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+}
