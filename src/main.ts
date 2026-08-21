@@ -81,7 +81,7 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
 const APP_VERSION = "1.2";
-const CURRENT_RELEASE_NOTE_VERSION = "v1.2";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.2-boot-avatar";
 const THEME_STORAGE_KEY = "crq-theme";
 const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
@@ -830,6 +830,7 @@ function showReleaseNoteIfNeeded(user: User) {
             <li>Modo leve ativado para reduzir travamentos em computadores mais simples;</li>
             <li>Troca entre modo claro e escuro otimizada, com transição mais curta e sem efeitos pesados;</li>
             <li>Remoção de animações contínuas, brilhos e efeitos de vidro que consumiam processamento desnecessário;</li>
+            <li>Carregamento ao pressionar F5 otimizado, com tela inicial imediata e redução de chamadas duplicadas ao servidor;</li>
             <li>Paginação na lista de chamados, reduzindo a quantidade de itens renderizados ao mesmo tempo.</li>
           </ul>
         </section>
@@ -843,6 +844,7 @@ function showReleaseNoteIfNeeded(user: User) {
             <li>Botão <strong>Inicializar</strong> fica disponível quando o chamado está pendente e é bloqueado após a inicialização;</li>
             <li>Chamados agendados mudam automaticamente para a fila de inicialização quando a data e o horário planejados são alcançados;</li>
             <li>Ao registrar pendência, o solicitante recebe uma notificação em formato de pop-up com o ID do chamado;</li>
+            <li>Interações e criação de chamados agora exibem foto de perfil ou iniciais do usuário para facilitar a identificação;</li>
             <li>Upload de imagens pelo clipboard habilitado no formulário de chamados.</li>
           </ul>
         </section>
