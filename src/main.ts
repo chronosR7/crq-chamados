@@ -366,8 +366,8 @@ function formatFileSize(size: number) {
   return `${Math.ceil(size / 1024)} KB`;
 }
 
-function escapeHtml(value: string) {
-  return value.replace(/[&<>"']/g, (char) => {
+function escapeHtml(value: string | number | null | undefined) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => {
     const entities: Record<string, string> = {
       "&": "&amp;",
       "<": "&lt;",
@@ -463,7 +463,7 @@ function filteredTickets() {
       assigned?.fullName ?? "",
       assigned?.email ?? "",
       departmentById(ticket.departmentId)?.name ?? "",
-      ticket.events.map((event) => event.message).join(" "),
+      ticket.events.map((event) => event.message ?? "").join(" "),
       ticket.attachments.map((attachment) => attachment.name).join(" ")
     ].join(" ").toLowerCase();
 
@@ -1857,34 +1857,45 @@ function renderCleanDashboard(user: User) {
 }
 
 function renderRequesterOpenContent(tickets: Ticket[]) {
-  const openTickets = tickets.filter((ticket) => !["solucionado", "fechado", "excluido"].includes(ticket.status));
-  const grouped = Array.from(openTickets.reduce((acc, ticket) => {
+  const countedTickets = tickets.filter((ticket) => ticket.status !== "excluido");
+  const total = countedTickets.length || 1;
+  const grouped = Array.from(countedTickets.reduce((acc, ticket) => {
     acc.set(ticket.requesterId, (acc.get(ticket.requesterId) ?? 0) + 1);
     return acc;
   }, new Map<string, number>()))
-    .map(([userId, count]) => ({
-      user: userById(userId),
-      count
-    }))
-    .sort((first, second) => second.count - first.count || (first.user?.fullName ?? "").localeCompare(second.user?.fullName ?? "", "pt-BR"))
-    .slice(0, 8);
+    .map(([userId, count]) => {
+      const user = userById(userId);
+      return {
+        name: user?.fullName ?? "Usuário removido",
+        department: departmentById(user?.departmentId)?.name ?? "Sem departamento",
+        count,
+        pct: Math.round((count / total) * 100)
+      };
+    })
+    .sort((first, second) => second.count - first.count || first.name.localeCompare(second.name, "pt-BR"))
+    .slice(0, 10);
 
   return grouped.length ? `
-    <div class="requester-open-list">
+    <div class="tech-chart-container requester-volume-chart">
       ${grouped.map((item) => `
-        <div class="requester-open-row">
-          <span>
-            <strong>${escapeHtml(item.user?.fullName ?? "Usuário removido")}</strong>
-            <small>${escapeHtml(departmentById(item.user?.departmentId)?.name ?? "Sem departamento")}</small>
-          </span>
-          <b>${item.count}</b>
+        <div class="tech-chart-row requester-volume-row">
+          <div class="tech-chart-label">
+            <span class="requester-chart-name">
+              <strong>${escapeHtml(item.name)}</strong>
+              <small>${escapeHtml(item.department)}</small>
+            </span>
+            <strong>${item.count} <small>(${item.pct}%)</small></strong>
+          </div>
+          <div class="tech-chart-bar-bg">
+            <div class="tech-chart-bar-fill requester-fill" style="width: ${item.pct}%;"></div>
+          </div>
         </div>
       `).join("")}
     </div>
   ` : `
     <div class="requester-open-empty">
-      <i data-lucide="check-check"></i>
-      <span>Nenhum chamado aberto no filtro atual.</span>
+      <i data-lucide="users"></i>
+      <span>Nenhum chamado registrado no filtro atual.</span>
     </div>
   `;
 }
@@ -2140,6 +2151,60 @@ function renderTicketPagination(totalItems: number, currentPage: number, totalPa
   `;
 }
 
+function ticketHistoryEvents(ticket: Ticket): TicketEvent[] {
+  const events = Array.isArray(ticket.events) ? ticket.events.filter(Boolean) : [];
+  const hasCreationEvent = events.some((event) => {
+    const type = normalizeText(event.type ?? "");
+    const message = normalizeText(event.message ?? "");
+    return type.includes("criacao") || message.includes("chamado criado");
+  });
+
+  if (hasCreationEvent) return events;
+
+  return [
+    ...events,
+    {
+      id: `synthetic-created-${ticket.id}`,
+      actorId: ticket.requesterId,
+      type: "Criação",
+      message: "Chamado criado e enviado para a fila TIC.",
+      createdAt: ticket.createdAt
+    }
+  ];
+}
+
+function renderTicketHistory(ticket: Ticket) {
+  return ticketHistoryEvents(ticket)
+    .slice()
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt || ticket.createdAt).getTime();
+      const dateB = new Date(b.createdAt || ticket.createdAt).getTime();
+      return (Number.isFinite(dateB) ? dateB : 0) - (Number.isFinite(dateA) ? dateA : 0);
+    })
+    .map((item) => {
+      const eventAttachments = ticket.attachments.filter((attachment) => attachment.eventId === item.id);
+      const actor = userById(item.actorId);
+      const actorIdentity = actor ?? { fullName: "Sistema" };
+      const eventType = item.type || "Atualização";
+      const eventMessage = item.message || "Atualização registrada no chamado.";
+      return `
+        <div class="timeline-item has-avatar">
+          <div class="timeline-avatar">${renderAvatarHTML(actorIdentity, "ticket-avatar-sm")}</div>
+          <div class="timeline-content">
+            <div class="timeline-heading">
+              <strong>${escapeHtml(eventType)}</strong>
+              <small>${formatDate(item.createdAt || ticket.createdAt)}</small>
+            </div>
+            <p>${escapeHtml(eventMessage)}</p>
+            ${eventAttachments.length ? `<div class="attachment-list event-attachments">${renderAttachmentCards(eventAttachments)}</div>` : ""}
+            <small class="timeline-author">${escapeHtml(actorIdentity.fullName)}</small>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
 /** Renderiza a view detalhada de um chamado selecionado */
 function renderTicketDetail(ticket: Ticket, user: User) {
   const requester = userById(ticket.requesterId);
@@ -2215,29 +2280,7 @@ function renderTicketDetail(ticket: Ticket, user: User) {
 
     <div class="timeline">
       <span class="section-kicker">Histórico</span>
-      ${ticket.events
-      .slice()
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .map((item) => {
-        const eventAttachments = ticket.attachments.filter((attachment) => attachment.eventId === item.id);
-        const actor = userById(item.actorId);
-        const actorIdentity = actor ?? { fullName: "Sistema" };
-        return `
-          <div class="timeline-item has-avatar">
-            <div class="timeline-avatar">${renderAvatarHTML(actorIdentity, "ticket-avatar-sm")}</div>
-            <div class="timeline-content">
-              <div class="timeline-heading">
-                <strong>${escapeHtml(item.type)}</strong>
-                <small>${formatDate(item.createdAt)}</small>
-              </div>
-              <p>${escapeHtml(item.message)}</p>
-              ${eventAttachments.length ? `<div class="attachment-list event-attachments">${renderAttachmentCards(eventAttachments)}</div>` : ""}
-              <small class="timeline-author">${escapeHtml(actorIdentity.fullName)}</small>
-            </div>
-          </div>
-        `;
-      })
-      .join("")}
+      ${renderTicketHistory(ticket)}
     </div>
   `;
 }

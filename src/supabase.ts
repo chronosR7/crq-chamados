@@ -165,7 +165,7 @@ export async function loadDataFromSupabase(): Promise<AppData | null> {
         ticketId: e.ticket_id,
         actorId: e.actor_id,
         type: e.event_type as TicketEvent['type'],
-        message: e.message || undefined,
+        message: e.message || 'Atualização registrada no chamado.',
         createdAt: e.created_at
       });
       return acc;

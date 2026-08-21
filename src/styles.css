@@ -9411,6 +9411,64 @@ body:not(.has-authenticated-shell) .a11y-panel {
   flex: 0 0 20px;
 }
 
+.requester-volume-chart {
+  gap: 10px;
+}
+
+.requester-volume-row .tech-chart-label {
+  align-items: end;
+}
+
+.requester-chart-name {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.requester-chart-name strong,
+.requester-chart-name small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.requester-chart-name strong {
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: 1.2;
+}
+
+.requester-chart-name small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.tech-chart-bar-fill.requester-fill {
+  background: var(--teal);
+}
+
+.tic-requester-widget .requester-volume-chart {
+  gap: 8px;
+}
+
+.tic-requester-widget .requester-chart-name strong {
+  font-size: 0.8rem;
+}
+
+.tic-requester-widget .requester-chart-name small {
+  font-size: 0.66rem;
+}
+
+[data-theme="dark"] .requester-chart-name strong {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .requester-chart-name small {
+  color: var(--text-base) !important;
+}
+
 .ticket-action:not(:disabled) {
   transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
 }
