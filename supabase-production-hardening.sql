@@ -147,6 +147,27 @@ create policy tickets_create_own on public.tickets for insert to authenticated w
 drop policy if exists tickets_update_scope on public.tickets;
 revoke update on table public.tickets from authenticated;
 
+-- 3.1 Histórico/comunicação: leitura e inclusão explícitas para evitar que
+-- comentários desapareçam quando a instalação não herdou a migração anterior.
+grant select, insert on table public.ticket_events to authenticated;
+
+drop policy if exists ticket_events_read_scope on public.ticket_events;
+create policy ticket_events_read_scope on public.ticket_events for select to authenticated using (
+  exists (
+    select 1 from public.tickets t
+    where t.id::text = ticket_id::text
+  )
+);
+
+drop policy if exists ticket_events_create_scope on public.ticket_events;
+create policy ticket_events_create_scope on public.ticket_events for insert to authenticated with check (
+  actor_id::text = auth.uid()::text
+  and exists (
+    select 1 from public.tickets t
+    where t.id::text = ticket_id::text
+  )
+);
+
 -- 4. Perfil próprio: somente campos pessoais. Administração passa pela Edge Function.
 drop policy if exists profiles_tic_update on public.profiles;
 drop policy if exists profiles_self_update on public.profiles;
@@ -206,6 +227,20 @@ create policy notifications_insert_scoped on public.notifications for insert to 
     )
   )
 );
+
+-- Atualização em tempo real para que novas mensagens sejam carregadas nas
+-- sessões da TIC e do solicitante sem depender de recarregar manualmente.
+do $$
+declare
+  v_table text;
+begin
+  foreach v_table in array array['tickets', 'ticket_events', 'notifications', 'profiles'] loop
+    begin
+      execute format('alter publication supabase_realtime add table public.%I', v_table);
+    exception when duplicate_object then null;
+    end;
+  end loop;
+end $$;
 
 notify pgrst, 'reload schema';
 commit;
