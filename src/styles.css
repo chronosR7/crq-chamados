@@ -9905,129 +9905,129 @@ html.theme-switching .focus-panel:hover {
   }
 }
 
-/* 50. Sidebar estável entre modo claro e escuro */
-@media (min-width: 901px) {
-  .sidebar,
-  [data-theme="dark"] .sidebar {
-    overflow-x: hidden !important;
-    overflow-y: hidden !important;
-    scrollbar-gutter: auto !important;
-  }
-
-  .sidebar:not(.collapsed) {
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 0 !important;
-  }
-
-  .sidebar:not(.collapsed) .sidebar-profile-card {
-    flex: 0 0 auto;
-    min-height: 174px;
-    box-sizing: border-box;
-    transform: none !important;
-    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease !important;
-    contain: layout paint;
-  }
-
-  .sidebar:not(.collapsed) .sidebar-profile-main {
-    grid-template-columns: 42px minmax(0, 1fr) !important;
-    min-height: 48px;
-    padding-right: 38px !important;
-  }
-
-  .sidebar:not(.collapsed) .sidebar-avatar-button,
-  .sidebar:not(.collapsed) .sidebar-avatar-button .avatar {
-    width: 42px !important;
-    min-width: 42px !important;
-    height: 42px !important;
-    min-height: 42px !important;
-    flex: 0 0 42px;
-  }
-
-  .sidebar:not(.collapsed) .sidebar-profile-departments {
-    min-height: 82px;
-  }
-
-  .sidebar-profile-card .profile-meta,
-  .sidebar-profile-card .profile-meta strong,
-  .sidebar-profile-card .profile-role-badge,
-  .sidebar-profile-card .profile-context-label,
-  .sidebar-profile-departments,
-  .sidebar-profile-departments .department-badges.compact,
-  .sidebar-profile-departments .department-badge {
-    transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease !important;
-    transform: none !important;
-  }
-
-  .sidebar-profile-departments .department-badges.compact {
-    overflow: hidden !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-
-  .sidebar-profile-departments .department-badges.compact::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
-
-  .sidebar:not(.collapsed) .main-nav {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-
-  .sidebar:not(.collapsed) .main-nav::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
-
-  .sidebar:not(.collapsed) .sidebar-action {
-    flex: 0 0 auto;
-    margin-top: auto;
-  }
+/* Conversa do chamado: leitura rápida para distinguir solicitante, TIC e pendências. */
+.ticket-conversation {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-soft, #f7fafc);
 }
 
-@media (min-width: 901px) and (max-height: 760px) {
-  .sidebar:not(.collapsed),
-  [data-theme="dark"] .sidebar:not(.collapsed) {
-    overflow-y: auto !important;
-    scrollbar-gutter: stable;
-    scrollbar-width: thin !important;
-    overscroll-behavior: contain;
-  }
-
-  .sidebar:not(.collapsed) .main-nav {
-    flex: 0 0 auto !important;
-    overflow: visible !important;
-  }
-
-  .sidebar:not(.collapsed) .sidebar-action {
-    margin-top: 0;
-  }
+.conversation-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
 }
 
-@media (max-width: 900px) {
-  .sidebar,
-  [data-theme="dark"] .sidebar {
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    scrollbar-gutter: stable;
-  }
-
-  .sidebar .main-nav {
-    flex: 0 0 auto !important;
-    overflow: visible !important;
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-
-  .sidebar .main-nav::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
+.conversation-heading h3 {
+  margin: 3px 0 0;
+  color: var(--text);
+  font-size: 1rem;
 }
+
+.conversation-heading > small {
+  max-width: 230px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  text-align: right;
+}
+
+.conversation-list {
+  display: grid;
+  gap: 12px;
+}
+
+.chat-message {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+  width: min(94%, 620px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.chat-message.is-outgoing {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-left: auto;
+}
+
+.chat-message.is-outgoing .timeline-avatar {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.chat-message.is-outgoing .chat-bubble {
+  grid-column: 1;
+  grid-row: 1;
+  background: #e4f4fb;
+  border-color: #b7ddea;
+}
+
+.chat-bubble {
+  min-width: 0;
+  padding: 11px 13px;
+  border: 1px solid var(--line);
+  border-radius: 4px 14px 14px 14px;
+  background: var(--surface, #fff);
+  box-shadow: 0 2px 7px rgba(18, 52, 71, 0.05);
+}
+
+.chat-message.is-outgoing .chat-bubble {
+  border-radius: 14px 4px 14px 14px;
+}
+
+.chat-message.is-pending .chat-bubble {
+  border-color: #e8c875;
+  background: #fff8df;
+}
+
+.chat-message.is-pending .chat-bubble::before {
+  content: "Ação necessária";
+  display: inline-flex;
+  margin-bottom: 5px;
+  color: #765600;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chat-message.is-system .chat-bubble {
+  background: color-mix(in srgb, var(--surface, #fff) 88%, var(--brand, #168ac0));
+}
+
+.chat-message .timeline-heading {
+  gap: 8px;
+}
+
+.chat-message .timeline-heading strong {
+  white-space: normal;
+}
+
+.chat-message .timeline-author {
+  margin-top: 7px;
+}
+
+[data-theme="dark"] .ticket-conversation {
+  background: var(--surface-soft);
+}
+
+[data-theme="dark"] .chat-bubble {
+  background: var(--surface);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .chat-message.is-outgoing .chat-bubble {
+  background: #15384a;
+  border-color: #27627a;
+}
+
