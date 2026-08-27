@@ -2208,33 +2208,44 @@ function ticketHistoryEvents(ticket: Ticket): TicketEvent[] {
   ];
 }
 
-function renderTicketHistory(ticket: Ticket) {
+function renderTicketHistory(ticket: Ticket, viewer: User) {
   return ticketHistoryEvents(ticket)
     .slice()
     .sort((a, b) => {
       const dateA = new Date(a.createdAt || ticket.createdAt).getTime();
       const dateB = new Date(b.createdAt || ticket.createdAt).getTime();
-      return (Number.isFinite(dateB) ? dateB : 0) - (Number.isFinite(dateA) ? dateA : 0);
+      return (Number.isFinite(dateA) ? dateA : 0) - (Number.isFinite(dateB) ? dateB : 0);
     })
     .map((item) => {
       const eventAttachments = ticket.attachments.filter((attachment) => attachment.eventId === item.id);
       const actor = userById(item.actorId);
-      const actorIdentity = actor ?? { fullName: "Sistema" };
+      const actorIdentity = actor ?? { fullName: "Sistema", avatarUrl: undefined };
       const eventType = item.type || "Atualização";
       const eventMessage = item.message || "Atualização registrada no chamado.";
+      const normalizedType = normalizeText(eventType);
+      const isOwnMessage = item.actorId === viewer.id;
+      const isPending = normalizedType.includes("pendencia");
+      const isComment = normalizedType.includes("complemento") || normalizedType.includes("comentario") || normalizedType.includes("mensagem") || normalizedType.includes("contato") || normalizedType.includes("resposta");
+      const bubbleClass = `${isOwnMessage ? "is-outgoing" : "is-incoming"} ${isPending ? "is-pending" : ""} ${isComment ? "is-comment" : "is-system"}`;
+      const actorRole = actor?.role ?? (isOwnMessage ? viewer.role : viewer.role === "tic" ? "usuario" : "tic");
+      const contextLabel = isPending
+        ? (viewer.role === "tic" ? "Pendência registrada" : "Pendência para responder")
+        : isComment
+          ? (actorRole === "tic" ? "Mensagem da TIC" : "Mensagem do solicitante")
+          : eventType;
       return `
-        <div class="timeline-item has-avatar">
+        <article class="timeline-item chat-message ${bubbleClass}">
           <div class="timeline-avatar">${renderAvatarHTML(actorIdentity, "ticket-avatar-sm")}</div>
-          <div class="timeline-content">
+          <div class="timeline-content chat-bubble">
             <div class="timeline-heading">
-              <strong>${escapeHtml(eventType)}</strong>
+              <strong>${escapeHtml(contextLabel)}</strong>
               <small>${formatDate(item.createdAt || ticket.createdAt)}</small>
             </div>
             <p>${escapeHtml(eventMessage)}</p>
             ${eventAttachments.length ? `<div class="attachment-list event-attachments">${renderAttachmentCards(eventAttachments)}</div>` : ""}
-            <small class="timeline-author">${escapeHtml(actorIdentity.fullName)}</small>
+            <small class="timeline-author">${escapeHtml(actorIdentity.fullName)}${isOwnMessage ? " · Você" : ""}</small>
           </div>
-        </div>
+        </article>
       `;
     })
     .join("");
@@ -2313,10 +2324,18 @@ function renderTicketDetail(ticket: Ticket, user: User) {
       </button>
     </form>
 
-    <div class="timeline">
-      <span class="section-kicker">Histórico</span>
-      ${renderTicketHistory(ticket)}
-    </div>
+    <section class="timeline ticket-conversation" aria-label="Conversa e histórico do chamado">
+      <div class="conversation-heading">
+        <div>
+          <span class="section-kicker">Comunicação do chamado</span>
+          <h3>Conversa e histórico</h3>
+        </div>
+        <small>Mensagens, pendências e movimentações aparecem aqui.</small>
+      </div>
+      <div class="conversation-list">
+        ${renderTicketHistory(ticket, user)}
+      </div>
+    </section>
   `;
 }
 
@@ -4504,6 +4523,15 @@ function bindTicketForms() {
         await createNotificationsInSupabase(createdNotifications);
         const updated = await updateTicketInSupabase(ticket);
         if (!updated) throw new Error("Não foi possível atualizar o chamado.");
+
+        // Reidrata a tela a partir do servidor após concluir todas as etapas.
+        // Assim a mensagem exibida é exatamente a que a TIC receberá, mesmo
+        // quando o evento de tempo real chegar antes da atualização do ticket.
+        const remote = await loadRemoteDataWithRetry(user.id, 2);
+        if (remote) {
+          data = remote;
+          ensureSeedData();
+        }
       } else {
         uploadedAttachments = files.map((file) => ({
           id: makeId("att"), name: file.name, size: file.size, type: file.type, eventId: commentEvent.id
@@ -5968,31 +5996,3 @@ async function init() {
   } else if (restoredUserId) {
     renderOperationalLoadFailure();
     return;
-  } else {
-    devWarn('Não foi possível carregar os dados do Supabase. O modo local está desativado.');
-  }
-
-  if (remoteTutorials.length) knowledgeTutorials = remoteTutorials;
-
-  ensureSeedData();
-  if (restoredUserId) {
-    if (data.users.some((user) => user.id === restoredUserId)) {
-      setCurrentUserId(restoredUserId);
-    } else {
-      setCurrentUserId(undefined);
-    }
-  }
-
-  const restoredUser = currentUser();
-  if (restoredUser) {
-    rememberCurrentPendingPopupNotifications(restoredUser);
-    void startRealtime(restoredUser);
-  }
-  restoreViewState();
-
-  render();
-  void autoStartDueScheduledTickets();
-  window.setInterval(() => void autoStartDueScheduledTickets(), 10000);
-}
-
-init();
