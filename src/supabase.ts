@@ -127,10 +127,18 @@ export async function loadDataFromSupabase(): Promise<AppData | null> {
     ]);
 
     if (deptError || userError || ticketError || notifError) {
-      throw new Error('Erro ao carregar dados do Supabase.');
+      throw new Error('Erro ao carregar os dados principais do Supabase.');
     }
 
-    const ticketEvents = eventsRes.error ? [] : eventsRes.data;
+    // O histórico faz parte do chamado. Nunca trate uma falha de RLS/permissão
+    // como se não existissem eventos, pois isso faz comentários desaparecerem
+    // da interface e dificulta a identificação da causa.
+    if (eventsRes.error) {
+      devError('Falha ao carregar o histórico dos chamados:', eventsRes.error);
+      throw new Error(`Não foi possível carregar o histórico dos chamados: ${eventsRes.error.message}`);
+    }
+
+    const ticketEvents = eventsRes.data;
     const ticketAttachments = attachmentsRes.error ? [] : attachmentsRes.data;
 
     const departments: Department[] = (depts ?? []).map((d: any) => ({ id: d.id, name: d.name }));
@@ -351,6 +359,16 @@ export async function createTicketEventInSupabase(ticketId: number, event: Ticke
     created_at: event.createdAt
   }, { onConflict: 'id', ignoreDuplicates: true });
   if (error) throw new Error(error.message);
+
+  // Confirma que o registro realmente ficou persistido. Isso evita que uma
+  // falha de permissão, política RLS ou esquema seja confundida com sucesso.
+  const { data: persisted, error: verifyError } = await supabase
+    .from('ticket_events')
+    .select('id')
+    .eq('id', event.id)
+    .maybeSingle();
+  if (verifyError) throw new Error(`O histórico não pôde ser confirmado: ${verifyError.message}`);
+  if (!persisted) throw new Error('O histórico não pôde ser confirmado no servidor.');
 }
 
 function notificationPayload(notification: NotificationItem) {
@@ -527,21 +545,3 @@ export async function updateManagedUserInSupabase(input: {
 async function managedUserFunctionError(error: any): Promise<string> {
   try {
     const context = error?.context;
-    if (context && typeof context.clone === 'function') {
-      const payload = await context.clone().json();
-      if (payload?.error) return String(payload.error);
-    }
-  } catch (_) {}
-  const message = String(error?.message ?? '');
-  if (/failed to send|fetch|network/i.test(message)) {
-    return 'A função administrativa manage-user ainda não está publicada ou não está acessível neste projeto Supabase.';
-  }
-  return message || 'Não foi possível executar a administração de usuários no Supabase.';
-}
-
-// Exclui todas as notificações registradas para um usuário no banco
-export async function deleteUserNotificationsFromSupabase(userId: string) {
-  if (!supabase) throw new Error('Supabase não configurado.');
-  const { error } = await supabase.from('notifications').delete().eq('user_id', userId);
-  if (error) throw new Error(`Não foi possível excluir as notificações: ${error.message}`);
-}
