@@ -545,3 +545,21 @@ export async function updateManagedUserInSupabase(input: {
 async function managedUserFunctionError(error: any): Promise<string> {
   try {
     const context = error?.context;
+    if (context && typeof context.clone === 'function') {
+      const payload = await context.clone().json();
+      if (payload?.error) return String(payload.error);
+    }
+  } catch (_) {}
+  const message = String(error?.message ?? '');
+  if (/failed to send|fetch|network/i.test(message)) {
+    return 'A função administrativa manage-user ainda não está publicada ou não está acessível neste projeto Supabase.';
+  }
+  return message || 'Não foi possível executar a administração de usuários no Supabase.';
+}
+
+// Exclui todas as notificações registradas para um usuário no banco
+export async function deleteUserNotificationsFromSupabase(userId: string) {
+  if (!supabase) throw new Error('Supabase não configurado.');
+  const { error } = await supabase.from('notifications').delete().eq('user_id', userId);
+  if (error) throw new Error(`Não foi possível excluir as notificações: ${error.message}`);
+}
