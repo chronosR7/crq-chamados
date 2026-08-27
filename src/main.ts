@@ -2030,42 +2030,36 @@ function renderTickets(user: User) {
         </label>
         ${selected && !detailOpen ? `
           <button class="ghost-button" id="toggle-ticket-detail" type="button">
-            <i data-lucide="panel-right-open"></i>
-            Abrir detalhes
+            <i data-lucide="message-circle"></i>
+            Abrir conversa
           </button>
         ` : ""}
       </div>
     </div>
 
-    <div class="tickets-layout ${detailOpen ? "detail-open" : "detail-closed"}" style="--ticket-detail-width: ${state.ticketDetailWidth}px">
+    <div class="tickets-layout ${detailOpen ? "detail-open" : "detail-closed"}">
       <section class="panel table-panel">
         <div class="table-hint">
-          <span>Clique em uma linha para abrir o chamado na lateral.</span>
+          <span>Clique em uma linha para abrir a conversa completa do chamado.</span>
         </div>
         ${renderTicketTable(pageTickets)}
         ${renderTicketPagination(tickets.length, currentPage, totalPages)}
       </section>
-      ${detailOpen && selected ? `
-        <div
-          id="ticket-detail-resizer"
-          class="detail-resizer"
-          role="separator"
-          tabindex="0"
-          aria-label="Redimensionar painel de detalhes"
-          aria-orientation="vertical"
-          title="Arraste para ajustar a largura"
-        ></div>
-        <aside class="panel detail-panel">
+    </div>
+    ${detailOpen && selected ? `
+      <div id="ticket-detail-overlay" class="ticket-detail-overlay" role="presentation">
+        <div class="ticket-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="ticket-detail-title" tabindex="-1">
           <div class="detail-panel-controls">
-            <button id="close-ticket-detail" class="detail-close-button" type="button" aria-label="Fechar painel lateral" title="Fechar painel">
-              <i data-lucide="panel-right-close"></i>
-              <span>Fechar</span>
+            <span class="detail-view-label"><i data-lucide="message-circle"></i> Atendimento do chamado</span>
+            <button id="close-ticket-detail" class="detail-close-button" type="button" aria-label="Fechar chamado" title="Fechar chamado">
+              <i data-lucide="x"></i>
+              <span>Voltar para a fila</span>
             </button>
           </div>
           ${renderTicketDetail(selected, user)}
-        </aside>
-      ` : ""}
-    </div>
+        </div>
+      </div>
+    ` : ""}
   `;
 }
 
@@ -2219,15 +2213,17 @@ function renderTicketHistory(ticket: Ticket, viewer: User) {
     .map((item) => {
       const eventAttachments = ticket.attachments.filter((attachment) => attachment.eventId === item.id);
       const actor = userById(item.actorId);
-      const actorIdentity = actor ?? { fullName: "Sistema", avatarUrl: undefined };
       const eventType = item.type || "Atualização";
       const eventMessage = item.message || "Atualização registrada no chamado.";
       const normalizedType = normalizeText(eventType);
-      const isOwnMessage = item.actorId === viewer.id;
       const isPending = normalizedType.includes("pendencia");
       const isComment = normalizedType.includes("complemento") || normalizedType.includes("comentario") || normalizedType.includes("mensagem") || normalizedType.includes("contato") || normalizedType.includes("resposta");
-      const bubbleClass = `${isOwnMessage ? "is-outgoing" : "is-incoming"} ${isPending ? "is-pending" : ""} ${isComment ? "is-comment" : "is-system"}`;
+      const isOwnMessage = isComment && item.actorId === viewer.id;
       const actorRole = actor?.role ?? (isOwnMessage ? viewer.role : viewer.role === "tic" ? "usuario" : "tic");
+      const actorIdentity = isComment
+        ? (actor ?? { fullName: actorRole === "tic" ? "Equipe TIC" : "Solicitante", avatarUrl: undefined })
+        : { fullName: "Sistema", avatarUrl: undefined };
+      const bubbleClass = `${isOwnMessage ? "is-outgoing" : "is-incoming"} ${isPending ? "is-pending" : ""} ${isComment ? "is-comment" : "is-system"}`;
       const contextLabel = isPending
         ? (viewer.role === "tic" ? "Pendência registrada" : "Pendência para responder")
         : isComment
@@ -2235,7 +2231,7 @@ function renderTicketHistory(ticket: Ticket, viewer: User) {
           : eventType;
       return `
         <article class="timeline-item chat-message ${bubbleClass}">
-          <div class="timeline-avatar">${renderAvatarHTML(actorIdentity, "ticket-avatar-sm")}</div>
+          <div class="timeline-avatar">${isComment ? renderAvatarHTML(actorIdentity, "ticket-avatar-sm") : `<span class="system-event-icon" aria-hidden="true"><i data-lucide="activity"></i></span>`}</div>
           <div class="timeline-content chat-bubble">
             <div class="timeline-heading">
               <strong>${escapeHtml(contextLabel)}</strong>
@@ -2243,7 +2239,7 @@ function renderTicketHistory(ticket: Ticket, viewer: User) {
             </div>
             <p>${escapeHtml(eventMessage)}</p>
             ${eventAttachments.length ? `<div class="attachment-list event-attachments">${renderAttachmentCards(eventAttachments)}</div>` : ""}
-            <small class="timeline-author">${escapeHtml(actorIdentity.fullName)}${isOwnMessage ? " · Você" : ""}</small>
+            <small class="timeline-author">${isComment ? `${escapeHtml(actorIdentity.fullName)}${isOwnMessage ? " · Você" : ""}` : "Atualização automática do sistema"}</small>
           </div>
         </article>
       `;
@@ -2262,7 +2258,7 @@ function renderTicketDetail(ticket: Ticket, user: User) {
     <div class="detail-header">
       <div>
         <span class="section-kicker">Chamado #${ticket.id}</span>
-        <h2>${escapeHtml(ticket.title)}</h2>
+        <h2 id="ticket-detail-title">${escapeHtml(ticket.title)}</h2>
       </div>
       ${statusPill(ticket.status)}
     </div>
@@ -2304,26 +2300,6 @@ function renderTicketDetail(ticket: Ticket, user: User) {
 
     ${user.role === "tic" ? renderTicActions(ticket) : renderUserActions(ticket, user)}
 
-    <form id="comment-form" class="comment-form ${interactionsLocked ? "ticket-locked" : ""}">
-      <label>
-        Complementar chamado
-        <textarea id="comment-text" rows="3" placeholder="Registrar atualização" ${lockedAttr}></textarea>
-      </label>
-      <div class="file-drop-area comment-file-drop">
-        <input id="comment-attachments-input" type="file" accept="${ATTACHMENT_ACCEPT}" multiple aria-label="Anexar arquivos ao complemento" ${interactionsLocked ? "disabled" : ""} />
-        <div class="file-drop-message">
-          <i data-lucide="paperclip"></i>
-          <span>Anexar arquivos ao complemento</span>
-          <small>Vários arquivos, até 2 MB cada</small>
-        </div>
-      </div>
-      <div id="comment-file-list" class="comment-file-list" aria-live="polite"></div>
-      <button class="secondary-button" type="submit" ${lockedAttr}>
-        <i data-lucide="message-square-plus"></i>
-        Adicionar
-      </button>
-    </form>
-
     <section class="timeline ticket-conversation" aria-label="Conversa e histórico do chamado">
       <div class="conversation-heading">
         <div>
@@ -2336,6 +2312,26 @@ function renderTicketDetail(ticket: Ticket, user: User) {
         ${renderTicketHistory(ticket, user)}
       </div>
     </section>
+
+    <form id="comment-form" class="comment-form ${interactionsLocked ? "ticket-locked" : ""}">
+      <label>
+        Responder no chamado
+        <textarea id="comment-text" rows="3" placeholder="Escreva uma resposta para o chamado" ${lockedAttr}></textarea>
+      </label>
+      <div class="file-drop-area comment-file-drop">
+        <input id="comment-attachments-input" type="file" accept="${ATTACHMENT_ACCEPT}" multiple aria-label="Anexar arquivos à resposta" ${interactionsLocked ? "disabled" : ""} />
+        <div class="file-drop-message">
+          <i data-lucide="paperclip"></i>
+          <span>Anexar arquivos à resposta</span>
+          <small>Vários arquivos, até 2 MB cada</small>
+        </div>
+      </div>
+      <div id="comment-file-list" class="comment-file-list" aria-live="polite"></div>
+      <button class="secondary-button" type="submit" ${lockedAttr}>
+        <i data-lucide="send"></i>
+        Enviar resposta
+      </button>
+    </form>
   `;
 }
 
@@ -3407,6 +3403,24 @@ function bindEvents() {
     state.ticketDetailOpen = false;
     render();
   });
+
+  const ticketDetailOverlay = document.querySelector<HTMLElement>("#ticket-detail-overlay");
+  const ticketDetailDialog = document.querySelector<HTMLElement>(".ticket-detail-dialog");
+  ticketDetailOverlay?.addEventListener("click", (event) => {
+    if (event.target === ticketDetailOverlay) {
+      state.ticketDetailOpen = false;
+      render();
+    }
+  });
+  ticketDetailDialog?.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      state.ticketDetailOpen = false;
+      render();
+    }
+  });
+  if (ticketDetailDialog) {
+    requestAnimationFrame(() => ticketDetailDialog.focus());
+  }
 
   document.querySelectorAll<HTMLElement>("[data-open-ticket]").forEach((el) => {
     el.addEventListener("click", () => openTicket(Number(el.dataset.openTicket)));
@@ -5996,3 +6010,31 @@ async function init() {
   } else if (restoredUserId) {
     renderOperationalLoadFailure();
     return;
+  } else {
+    devWarn('Não foi possível carregar os dados do Supabase. O modo local está desativado.');
+  }
+
+  if (remoteTutorials.length) knowledgeTutorials = remoteTutorials;
+
+  ensureSeedData();
+  if (restoredUserId) {
+    if (data.users.some((user) => user.id === restoredUserId)) {
+      setCurrentUserId(restoredUserId);
+    } else {
+      setCurrentUserId(undefined);
+    }
+  }
+
+  const restoredUser = currentUser();
+  if (restoredUser) {
+    rememberCurrentPendingPopupNotifications(restoredUser);
+    void startRealtime(restoredUser);
+  }
+  restoreViewState();
+
+  render();
+  void autoStartDueScheduledTickets();
+  window.setInterval(() => void autoStartDueScheduledTickets(), 10000);
+}
+
+init();
