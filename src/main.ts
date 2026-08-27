@@ -2255,83 +2255,110 @@ function renderTicketDetail(ticket: Ticket, user: User) {
   const interactionsLocked = ticketRequiresReopen(ticket);
   const lockedAttr = interactionsLocked ? "disabled aria-disabled=\"true\"" : "";
   return `
-    <div class="detail-header">
-      <div>
-        <span class="section-kicker">Chamado #${ticket.id}</span>
-        <h2 id="ticket-detail-title">${escapeHtml(ticket.title)}</h2>
-      </div>
-      ${statusPill(ticket.status)}
-    </div>
-
-    <div class="ticket-created-by">
-      ${renderAvatarHTML(requesterIdentity, "ticket-avatar-md")}
-      <div class="ticket-identity-copy">
-        <span>Aberto por</span>
-        <strong>${escapeHtml(requesterIdentity.fullName)}</strong>
-        <small>${formatDate(ticket.createdAt)}</small>
-      </div>
-    </div>
-
-    ${ticket.plannedFor ? `
-      <div class="planned-schedule-card">
-        <i data-lucide="calendar-clock"></i>
-        <div>
-          <strong>Atendimento Agendado</strong>
-          <span>Programado para ${formatDate(ticket.plannedFor)}</span>
+    <div class="ticket-detail-body">
+      <aside class="ticket-context-sidebar" aria-label="Contexto do chamado">
+        <div class="ticket-sidebar-heading">
+          <span class="section-kicker">Solicitante</span>
+          <h3>Quem abriu</h3>
         </div>
-      </div>
-    ` : ''}
-
-    <div class="detail-meta">
-      <span><strong>Tipo</strong>${ticket.type === "incidente" ? "Incidente" : "Requisição"}</span>
-      <span><strong>Categoria</strong>${escapeHtml(ticket.category)}</span>
-      <span><strong>Requerente</strong>${escapeHtml(requester?.fullName ?? "")}</span>
-      <span><strong>Atribuído</strong>${escapeHtml(assigned?.fullName ?? "Fila TIC")}</span>
-      <span><strong>Departamento</strong>${escapeHtml(departmentById(ticket.departmentId)?.name ?? "")}</span>
-    </div>
-
-    <div class="description-block">
-      <strong>Descrição</strong>
-      <p>${escapeHtml(ticket.description)}</p>
-      <div class="attachment-list">
-        ${renderAttachmentCards(ticket.attachments.filter((attachment) => !attachment.eventId))}
-      </div>
-    </div>
-
-    ${user.role === "tic" ? renderTicActions(ticket) : renderUserActions(ticket, user)}
-
-    <section class="timeline ticket-conversation" aria-label="Conversa e histórico do chamado">
-      <div class="conversation-heading">
-        <div>
-          <span class="section-kicker">Comunicação do chamado</span>
-          <h3>Conversa e histórico</h3>
+        <div class="ticket-created-by">
+          ${renderAvatarHTML(requesterIdentity, "ticket-avatar-md")}
+          <div class="ticket-identity-copy">
+            <strong>${escapeHtml(requesterIdentity.fullName)}</strong>
+            <small>Aberto em ${formatDate(ticket.createdAt)}</small>
+          </div>
         </div>
-        <small>Mensagens, pendências e movimentações aparecem aqui.</small>
-      </div>
-      <div class="conversation-list">
-        ${renderTicketHistory(ticket, user)}
-      </div>
-    </section>
 
-    <form id="comment-form" class="comment-form ${interactionsLocked ? "ticket-locked" : ""}">
-      <label>
-        Responder no chamado
-        <textarea id="comment-text" rows="3" placeholder="Escreva uma resposta para o chamado" ${lockedAttr}></textarea>
-      </label>
-      <div class="file-drop-area comment-file-drop">
-        <input id="comment-attachments-input" type="file" accept="${ATTACHMENT_ACCEPT}" multiple aria-label="Anexar arquivos à resposta" ${interactionsLocked ? "disabled" : ""} />
-        <div class="file-drop-message">
-          <i data-lucide="paperclip"></i>
-          <span>Anexar arquivos à resposta</span>
-          <small>Vários arquivos, até 2 MB cada</small>
+        ${ticket.plannedFor ? `
+          <div class="planned-schedule-card">
+            <i data-lucide="calendar-clock"></i>
+            <div>
+              <strong>Atendimento agendado</strong>
+              <span>${formatDate(ticket.plannedFor)}</span>
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="description-block ticket-description-card">
+          <div class="ticket-sidebar-heading compact">
+            <span class="section-kicker">Solicitação</span>
+            <h3>Descrição</h3>
+          </div>
+          <p>${escapeHtml(ticket.description)}</p>
+          <div class="attachment-list">
+            ${renderAttachmentCards(ticket.attachments.filter((attachment) => !attachment.eventId))}
+          </div>
         </div>
-      </div>
-      <div id="comment-file-list" class="comment-file-list" aria-live="polite"></div>
-      <button class="secondary-button" type="submit" ${lockedAttr}>
-        <i data-lucide="send"></i>
-        Enviar resposta
-      </button>
-    </form>
+      </aside>
+
+      <main class="ticket-conversation-main">
+        <header class="ticket-conversation-header">
+          <div class="detail-header">
+            <div>
+              <span class="section-kicker">Chamado #${ticket.id}</span>
+              <h2 id="ticket-detail-title">${escapeHtml(ticket.title)}</h2>
+            </div>
+            ${statusPill(ticket.status)}
+          </div>
+          <div class="conversation-summary">
+            <span><i data-lucide="messages-square"></i> ${ticketHistoryEvents(ticket).length} registro${ticketHistoryEvents(ticket).length === 1 ? "" : "s"}</span>
+            <span><i data-lucide="clock-3"></i> Atualizado ${formatDate(ticket.updatedAt)}</span>
+          </div>
+        </header>
+
+        <section class="timeline ticket-conversation" aria-label="Conversa e histórico do chamado">
+          <div class="conversation-heading">
+            <div>
+              <span class="section-kicker">Comunicação do chamado</span>
+              <h3>Conversa e histórico</h3>
+            </div>
+            <small>Mensagens, pendências e movimentações aparecem aqui.</small>
+          </div>
+          <div class="conversation-list">
+            ${renderTicketHistory(ticket, user)}
+          </div>
+        </section>
+
+        <form id="comment-form" class="comment-form ${interactionsLocked ? "ticket-locked" : ""}">
+          <label>
+            Responder no chamado
+            <textarea id="comment-text" rows="3" placeholder="Escreva uma resposta para o chamado" ${lockedAttr}></textarea>
+          </label>
+          <div class="comment-composer-footer">
+            <div>
+              <div class="file-drop-area comment-file-drop">
+                <input id="comment-attachments-input" type="file" accept="${ATTACHMENT_ACCEPT}" multiple aria-label="Anexar arquivos à resposta" ${interactionsLocked ? "disabled" : ""} />
+                <div class="file-drop-message">
+                  <i data-lucide="paperclip"></i>
+                  <span>Anexar arquivos</span>
+                  <small>Até 2 MB por arquivo</small>
+                </div>
+              </div>
+              <div id="comment-file-list" class="comment-file-list" aria-live="polite"></div>
+            </div>
+            <button class="primary-button" type="submit" ${lockedAttr}>
+              <i data-lucide="send"></i>
+              Enviar resposta
+            </button>
+          </div>
+        </form>
+      </main>
+
+      <aside class="ticket-properties-sidebar" aria-label="Propriedades do chamado">
+        <div class="ticket-sidebar-heading">
+          <span class="section-kicker">Atendimento</span>
+          <h3>Propriedades</h3>
+        </div>
+        <dl class="ticket-property-list">
+          <div><dt>Tipo</dt><dd>${ticket.type === "incidente" ? "Incidente" : "Requisição"}</dd></div>
+          <div><dt>Categoria</dt><dd>${escapeHtml(ticket.category)}</dd></div>
+          <div><dt>Departamento</dt><dd>${escapeHtml(departmentById(ticket.departmentId)?.name ?? "Não informado")}</dd></div>
+          <div><dt>Responsável</dt><dd>${escapeHtml(assigned?.fullName ?? "Fila TIC")}</dd></div>
+          <div><dt>Prioridade</dt><dd>${priorityPill(ticket.priority)}</dd></div>
+        </dl>
+        ${user.role === "tic" ? renderTicActions(ticket) : renderUserActions(ticket, user)}
+      </aside>
+    </div>
   `;
 }
 
