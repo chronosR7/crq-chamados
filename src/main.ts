@@ -2193,18 +2193,38 @@ function ticketHistoryEvents(ticket: Ticket): TicketEvent[] {
     return type.includes("criacao") || message.includes("chamado criado");
   });
 
-  if (hasCreationEvent) return events;
+  const history = hasCreationEvent
+    ? [...events]
+    : [
+        ...events,
+        {
+          id: `synthetic-created-${ticket.id}`,
+          actorId: ticket.requesterId,
+          type: "Criação",
+          message: "Chamado criado e enviado para a fila TIC.",
+          createdAt: ticket.createdAt
+        }
+      ];
+  const description = ticket.description.trim();
+  const hasDescriptionEvent = description.length > 0 && history.some((event) => normalizeText(event.message ?? "") === normalizeText(description));
 
-  return [
-    ...events,
-    {
-      id: `synthetic-created-${ticket.id}`,
+  if (description.length > 0 && !hasDescriptionEvent) {
+    const creationIndex = history.findIndex((event) => {
+      const type = normalizeText(event.type ?? "");
+      const message = normalizeText(event.message ?? "");
+      return type.includes("criacao") || message.includes("chamado criado");
+    });
+    const descriptionEvent: TicketEvent = {
+      id: `synthetic-description-${ticket.id}`,
       actorId: ticket.requesterId,
-      type: "Criação",
-      message: "Chamado criado e enviado para a fila TIC.",
+      type: "Mensagem inicial",
+      message: description,
       createdAt: ticket.createdAt
-    }
-  ];
+    };
+    history.splice(creationIndex >= 0 ? creationIndex + 1 : 0, 0, descriptionEvent);
+  }
+
+  return history;
 }
 
 function renderTicketHistory(ticket: Ticket, viewer: User) {
