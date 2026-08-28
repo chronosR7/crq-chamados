@@ -80,8 +80,8 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
-const APP_VERSION = "1.2";
-const CURRENT_RELEASE_NOTE_VERSION = "v1.2-boot-avatar";
+const APP_VERSION = "1.3";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.3-sidebar-conversation";
 const THEME_STORAGE_KEY = "crq-theme";
 const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
@@ -850,55 +850,44 @@ function showReleaseNoteIfNeeded(user: User) {
     <article class="release-note-modal" role="dialog" aria-modal="true" aria-labelledby="release-note-title" aria-describedby="release-note-summary" tabindex="-1">
       <header class="release-note-header">
         <div class="release-note-version"><i data-lucide="sparkles"></i><span>Atualização disponível</span></div>
-        <h2 id="release-note-title">Nota de Atualização — Versão v1.2</h2>
+        <h2 id="release-note-title">Nota de Atualização — Versão v1.3</h2>
         <p>Central de Atendimento TIC <span aria-hidden="true">|</span> CRQ-12</p>
       </header>
       <div class="release-note-content">
-        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.2</strong> da Central de Atendimento TIC entrega uma experiência mais leve, acessível e organizada, com melhorias importantes no painel de chamados, no dashboard e nos fluxos de atendimento.</p>
+        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.3</strong> concentra as melhorias recentes na comunicação dos chamados, na navegação lateral e na visibilidade das notificações.</p>
         <section>
-          <h3><i data-lucide="sliders-horizontal"></i>Experiência e acessibilidade</h3>
+          <h3><i data-lucide="message-circle"></i>Conversa do chamado</h3>
           <ul>
-            <li>A tela de login e cadastro foi ajustada para funcionar melhor com zoom, permitindo rolagem e acesso aos botões mesmo em ampliações maiores;</li>
-            <li>Correções de contraste no modo escuro, incluindo campos claros, textos brancos em fundos claros e áreas com baixa leitura;</li>
-            <li>Interface mais limpa e minimalista, usando a identidade visual CRQ-12 com azul, branco e verde claro;</li>
-            <li>Logo CRQ-12 aplicada no sistema e no ícone exibido pelo navegador.</li>
+            <li>A descrição inicial do chamado agora aparece na comunicação principal, junto das mensagens e atualizações;</li>
+            <li>O histórico passou a ser apresentado em formato de conversa, com identificação do solicitante e da equipe por nome e avatar;</li>
+            <li>Atualizações automáticas do sistema permanecem separadas das conversas humanas e recebem indicação visual conforme o status;</li>
+            <li>O chat ganhou rolagem própria, preservando a altura das mensagens e evitando cortes de texto ou de imagens;</li>
+            <li>A tela de atendimento foi ajustada para ocupar melhor o espaço disponível, com cabeçalho e retorno para a fila posicionados corretamente.</li>
           </ul>
         </section>
         <section>
-          <h3><i data-lucide="trending-up"></i>Desempenho</h3>
+          <h3><i data-lucide="paperclip"></i>Anexos</h3>
           <ul>
-            <li>Modo leve ativado para reduzir travamentos em computadores mais simples;</li>
-            <li>Troca entre modo claro e escuro otimizada, com transição mais curta e sem efeitos pesados;</li>
-            <li>Remoção de animações contínuas, brilhos e efeitos de vidro que consumiam processamento desnecessário;</li>
-            <li>Carregamento ao pressionar F5 otimizado, com tela inicial imediata e redução de chamadas duplicadas ao servidor;</li>
-            <li>Paginação na lista de chamados, reduzindo a quantidade de itens renderizados ao mesmo tempo.</li>
+            <li>Os anexos continuam em uma área própria para não poluir a conversa;</li>
+            <li>Miniaturas de imagens mostram o conteúdo completo, e nomes longos são abreviados sem estourar a lateral;</li>
+            <li>O botão de anexar arquivos recebeu apresentação mais clara e acessível.</li>
           </ul>
         </section>
         <section>
-          <h3><i data-lucide="circle-check"></i>Chamados e fluxo TIC</h3>
+          <h3><i data-lucide="bell"></i>Status e notificações</h3>
           <ul>
-            <li>Painel lateral do chamado agora pode ser fechado e redimensionado, liberando espaço para visualizar a tabela completa;</li>
-            <li>Chamados solucionados ficam bloqueados para edição, mantendo apenas a opção de reabrir;</li>
-            <li>Ao reabrir um chamado, o sistema solicita confirmação e devolve o chamado para a fila da TIC;</li>
-            <li>Ao fechar um chamado, o status final passa a ser salvo como <strong>Solucionado</strong>;</li>
-            <li>Botão <strong>Inicializar</strong> fica disponível quando o chamado está pendente e é bloqueado após a inicialização;</li>
-            <li>Chamados agendados mudam automaticamente para a fila de inicialização quando a data e o horário planejados são alcançados;</li>
-            <li>Ao registrar pendência, o solicitante recebe uma notificação em formato de pop-up com o ID do chamado;</li>
-            <li>Interações e criação de chamados agora exibem foto de perfil ou iniciais do usuário para facilitar a identificação;</li>
-            <li>Upload de imagens pelo clipboard habilitado no formulário de chamados.</li>
+            <li>Os blocos de atualização automática usam cores distintas para Agendado, Pendente, Solucionado, Fechado e Excluído, sem alterar a cor das mensagens dos usuários;</li>
+            <li>Notificações não lidas agora destacam o botão e o contador com pulso de ondas até serem abertas;</li>
+            <li>Ao abrir um chamado, a navegação global se recolhe para priorizar o atendimento, sem exibir a busca sobre a conversa.</li>
           </ul>
         </section>
         <section>
-          <h3><i data-lucide="layout-dashboard"></i>Dashboard e organização</h3>
+          <h3><i data-lucide="sliders-horizontal"></i>Navegação e acessibilidade</h3>
           <ul>
-            <li>Quadros do Painel TIC reorganizados em uma grade mais equilibrada;</li>
-            <li>Widgets do dashboard podem ser movidos com o mouse para personalizar a posição;</li>
-            <li>Novo indicador de chamados abertos por usuário;</li>
-            <li>Filtro por departamento para o perfil TIC e visão restrita ao próprio departamento para gestores;</li>
-            <li>Correção do quadro <strong>Usuários Online</strong>, evitando estouro visual da faixa lateral.</li>
+            <li>A barra lateral ganhou comportamento responsivo para telas baixas, com rolagem e espaçamento que evitam o corte do item <strong>Acessibilidade</strong> nos temas claro e escuro.</li>
           </ul>
         </section>
-        <p class="release-note-closing">A atualização reforça nosso compromisso em oferecer uma Central de Atendimento TIC mais acessível, rápida, estável e adequada às necessidades dos usuários.</p>
+        <p class="release-note-closing">Estas alterações tornam o atendimento mais claro, organizado e fácil de acompanhar para solicitantes e equipe TIC.</p>
       </div>
       <footer class="release-note-footer">
         <label class="release-note-dismiss"><input id="release-note-dismiss" type="checkbox" /><span><strong>Não mostrar novamente</strong><small>Esta nota não será exibida nos próximos acessos.</small></span></label>
@@ -1019,20 +1008,22 @@ function renderShell(user: User) {
             </div>
           </div>
 
-          <span class="nav-section-label">Navegação</span>
-          <nav class="main-nav" aria-label="Navegação principal">
-            ${navButton("dashboard", "layout-dashboard", user.role === "tic" ? "Dashboard TIC" : "Resumo")}
-            ${navButton("tickets", "list-filter", "Fila de Chamados")}
-            ${navButton("new-ticket", "square-plus", "Novo chamado")}
-            ${user.role !== "usuario" ? navButton("users", "contact-round", "Usuários & Acessos") : ""}
-            ${user.role === "tic" ? navButton("departments", "folder-open", "Departamentos") : ""}
-            ${user.role !== "usuario" ? navButton("reports", "file-text", "Relatórios") : ""}
-            ${navButton("knowledge", "book-open", "Base de conhecimento")}
-            ${navButton("notifications", "bell", "Notificações", unread)}
-            ${user.role === "tic" ? navButton("trash", "trash-2", "Lixeira") : ""}
-            ${navButton("settings", "settings", "Configurações")}
-            ${navButton("accessibility", "sliders-horizontal", "Acessibilidade")}
-          </nav>
+          <div class="sidebar-navigation">
+            <span class="nav-section-label">Navegação</span>
+            <nav class="main-nav" aria-label="Navegação principal">
+              ${navButton("dashboard", "layout-dashboard", user.role === "tic" ? "Dashboard TIC" : "Resumo")}
+              ${navButton("tickets", "list-filter", "Fila de Chamados")}
+              ${navButton("new-ticket", "square-plus", "Novo chamado")}
+              ${user.role !== "usuario" ? navButton("users", "contact-round", "Usuários & Acessos") : ""}
+              ${user.role === "tic" ? navButton("departments", "folder-open", "Departamentos") : ""}
+              ${user.role !== "usuario" ? navButton("reports", "file-text", "Relatórios") : ""}
+              ${navButton("knowledge", "book-open", "Base de conhecimento")}
+              ${navButton("notifications", "bell", "Notificações", unread)}
+              ${user.role === "tic" ? navButton("trash", "trash-2", "Lixeira") : ""}
+              ${navButton("settings", "settings", "Configurações")}
+              ${navButton("accessibility", "sliders-horizontal", "Acessibilidade")}
+            </nav>
+          </div>
 
           ${user.role === "tic" ? `
             <div class="sidebar-online-widget ${state.onlineUsersExpanded ? "expanded" : ""}" id="users-accordion">
