@@ -11681,3 +11681,106 @@ html.low-power-mode .nav-button.notification-nav-button.has-unread .nav-notifica
     padding-bottom: 8px !important;
   }
 }
+
+/* 57. Fluxo estrutural da navegação lateral
+   O rótulo e todos os itens pertencem ao mesmo fluxo. A área de navegação
+   pode rolar quando faltar altura, enquanto o widget de presença e o botão
+   de saída permanecem fora dela; nenhum item é redimensionado ou sobreposto. */
+.sidebar-navigation {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  gap: 8px;
+}
+
+.sidebar-navigation .nav-section-label {
+  flex: 0 0 auto;
+}
+
+.sidebar-navigation .main-nav {
+  min-width: 0;
+  min-height: 0;
+}
+
+@media (min-width: 901px) {
+  .sidebar:not(.collapsed) .sidebar-navigation {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding-bottom: 4px;
+    scrollbar-width: thin !important;
+    scrollbar-color: color-mix(in srgb, var(--brand) 58%, var(--line-strong)) transparent !important;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-navigation .main-nav {
+    flex: 0 0 auto !important;
+    gap: 2px !important;
+    overflow: visible !important;
+    padding-bottom: 4px !important;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-navigation .nav-button {
+    flex: 0 0 auto !important;
+    min-height: 42px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-navigation::-webkit-scrollbar {
+    display: block !important;
+    width: 5px !important;
+    height: 5px !important;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-navigation::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-navigation::-webkit-scrollbar-thumb {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--brand) 58%, var(--line-strong));
+    background-clip: padding-box;
+  }
+}
+
+@media (max-width: 900px) {
+  .sidebar:not(.collapsed) {
+    gap: 12px !important;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-navigation {
+    flex: 0 0 auto !important;
+    min-height: max-content !important;
+    overflow: visible !important;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-navigation .main-nav {
+    display: grid !important;
+    grid-auto-rows: minmax(40px, auto);
+    gap: 2px !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+    padding-bottom: 4px !important;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-navigation .nav-button,
+  .sidebar:not(.collapsed) .sidebar-action {
+    flex: 0 0 auto !important;
+    min-height: 40px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-online-widget {
+    flex: 0 0 auto !important;
+  }
+}
