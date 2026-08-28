@@ -11280,6 +11280,58 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   height: 13px !important;
 }
 
+/* Cor de status nas atualizações automáticas: apenas a borda e o ícone
+   recebem destaque, mantendo a notificação leve em relação às mensagens. */
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-planejado .chat-bubble {
+  border-left-color: #6366f1 !important;
+  background: color-mix(in srgb, var(--surface-soft) 93%, #6366f1 7%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-planejado .system-event-icon {
+  color: #6366f1 !important;
+  border-color: color-mix(in srgb, var(--line) 72%, #6366f1 28%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-pendente .chat-bubble {
+  border-left-color: var(--amber) !important;
+  background: color-mix(in srgb, var(--surface-soft) 88%, var(--amber) 12%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-pendente .system-event-icon {
+  color: var(--amber) !important;
+  border-color: color-mix(in srgb, var(--line) 70%, var(--amber) 30%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-solucionado .chat-bubble {
+  border-left-color: var(--teal) !important;
+  background: color-mix(in srgb, var(--surface-soft) 93%, var(--teal) 7%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-solucionado .system-event-icon {
+  color: var(--teal) !important;
+  border-color: color-mix(in srgb, var(--line) 72%, var(--teal) 28%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-fechado .chat-bubble {
+  border-left-color: #64748b !important;
+  background: color-mix(in srgb, var(--surface-soft) 93%, #64748b 7%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-fechado .system-event-icon {
+  color: #64748b !important;
+  border-color: color-mix(in srgb, var(--line) 72%, #64748b 28%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-excluido .chat-bubble {
+  border-left-color: var(--red) !important;
+  background: color-mix(in srgb, var(--surface-soft) 93%, var(--red) 7%) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system.status-excluido .system-event-icon {
+  color: var(--red) !important;
+  border-color: color-mix(in srgb, var(--line) 72%, var(--red) 28%) !important;
+}
+
 /* Conteúdo longo nunca deve ser escondido pelo estilo genérico da timeline. */
 .ticket-conversation-main .timeline-item.chat-message,
 .ticket-conversation-main .timeline-item.chat-message .chat-bubble {
