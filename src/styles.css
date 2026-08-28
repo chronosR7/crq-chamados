@@ -11201,7 +11201,7 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   align-items: center !important;
 }
 
-.ticket-conversation-main .timeline-item.chat-message.is-system .chat-bubble {
+.ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .chat-bubble {
   width: 100% !important;
   max-width: none !important;
   justify-self: stretch !important;
@@ -11220,6 +11220,12 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
 .ticket-detail-dialog > .detail-panel-controls .detail-close-button {
   align-self: center !important;
   margin: 0 !important;
+  inset: auto !important;
   transform: none !important;
   line-height: 1 !important;
 }
+
+/* A descrição pertence à conversa; a lateral mantém apenas os arquivos. */
+.ticket-context-sidebar .ticket-attachments-card {
+  margin-top: 20px;
+  padding-top: 16px;
