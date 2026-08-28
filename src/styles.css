@@ -11595,3 +11595,74 @@ html.low-power-mode .nav-button.notification-nav-button.has-unread .nav-notifica
 html.low-power-mode .nav-button.notification-nav-button.has-unread .nav-notification-count::after {
   animation: none !important;
 }
+
+/* 56. Sidebar acessível em janelas baixas
+   Em telas com pouca altura, a navegação não pode ficar espremida entre o
+   perfil e o rodapé. Mantemos os controles com área de toque confortável e
+   deixamos a própria barra lateral rolar como uma única coluna, evitando um
+   item parcialmente oculto (especialmente Acessibilidade) em qualquer tema. */
+@media (min-width: 901px) and (max-height: 720px) {
+  .sidebar:not(.collapsed),
+  [data-theme="dark"] .sidebar:not(.collapsed) {
+    min-height: 0 !important;
+    padding: 12px 12px !important;
+    gap: 10px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: color-mix(in srgb, var(--brand) 58%, var(--line-strong)) transparent !important;
+    scrollbar-gutter: stable;
+    overscroll-behavior: contain;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-profile-card {
+    min-height: 0 !important;
+    padding: 10px !important;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-profile-departments {
+    min-height: 0 !important;
+  }
+
+  .sidebar:not(.collapsed) .nav-section-label {
+    padding-bottom: 4px;
+  }
+
+  .sidebar:not(.collapsed) .main-nav {
+    flex: 0 0 auto !important;
+    gap: 1px !important;
+    overflow: visible !important;
+  }
+
+  .sidebar:not(.collapsed) .nav-button,
+  .sidebar:not(.collapsed) .sidebar-action {
+    min-height: 40px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-online-widget {
+    margin-top: 0;
+  }
+
+  .sidebar:not(.collapsed) .sidebar-action {
+    margin-top: 0;
+  }
+
+  .sidebar:not(.collapsed)::-webkit-scrollbar {
+    display: block !important;
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  .sidebar:not(.collapsed)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar:not(.collapsed)::-webkit-scrollbar-thumb {
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--brand) 58%, var(--line-strong));
+    background-clip: padding-box;
+  }
+}
