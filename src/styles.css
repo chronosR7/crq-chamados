@@ -10922,6 +10922,8 @@ html.theme-switching .focus-panel:hover {
   height: 0 !important;
 }
 
+}
+
 /* 52. Estado de atendimento aberto
    Mantém o workspace acima da navegação global e garante que a sidebar não
    atravesse o overlay do chamado. */
@@ -11168,4 +11170,40 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
     max-width: 560px;
   }
 }
+
+/* 54. Registros alinhados no trilho da conversa
+   O item de timeline não deve pintar uma faixa própria: o balão é a única
+   superfície visual e ocupa exatamente a coluna disponível. */
+.ticket-conversation-main .conversation-list {
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message {
+  width: min(88%, 720px) !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system {
+  width: 100% !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  align-items: stretch !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system .timeline-avatar {
+  align-self: stretch !important;
+  height: auto !important;
+  min-height: 46px;
+  align-items: center !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system .chat-bubble {
+  width: 100% !important;
+  max-width: none !important;
+  justify-self: stretch !important;
+  box-sizing: border-box;
 }

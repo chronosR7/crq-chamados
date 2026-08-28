@@ -959,29 +959,31 @@ function renderShell(user: User) {
     <div class="tech-bg-overlay"></div>
     <div class="app-shell ${isCollapsed ? 'sidebar-collapsed' : ''} ${ticketDetailActive ? 'ticket-detail-active' : ''}">
       
-      <!-- MENU SUPERIOR TECNOLÓGICO -->
-      <header class="top-nav-bar" aria-label="Ações rápidas">
-        <div class="top-nav-right">
-          <div class="top-search-wrapper">
-            <i data-lucide="list-filter"></i>
-            <input type="search" id="global-top-search" placeholder="Pesquisar nos chamados..." value="${escapeHtml(state.filters.search)}" />
+      <!-- MENU SUPERIOR TECNOLÓGICO (não participa do workspace de atendimento) -->
+      ${!ticketDetailActive ? `
+        <header class="top-nav-bar" aria-label="Ações rápidas">
+          <div class="top-nav-right">
+            <div class="top-search-wrapper">
+              <i data-lucide="list-filter"></i>
+              <input type="search" id="global-top-search" placeholder="Pesquisar nos chamados..." value="${escapeHtml(state.filters.search)}" />
+            </div>
+
+            <button id="toggle-theme-top" class="icon-button top-icon-btn" type="button" aria-label="Alternar modo escuro/claro" title="Alternar Tema">
+              <i data-lucide="${localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'sun' : 'moon'}"></i>
+            </button>
+
+            <button id="open-notifications" class="icon-button top-icon-btn" type="button" aria-label="Notificações" title="Notificações">
+              <i data-lucide="bell"></i>
+              ${unread ? `<span class="badge-dot">${unread}</span>` : ""}
+            </button>
+
+            <button id="quick-new-ticket" class="primary-button compact tech-quick-btn" type="button">
+              <i data-lucide="square-plus"></i>
+              Novo
+            </button>
           </div>
-
-          <button id="toggle-theme-top" class="icon-button top-icon-btn" type="button" aria-label="Alternar modo escuro/claro" title="Alternar Tema">
-            <i data-lucide="${localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'sun' : 'moon'}"></i>
-          </button>
-
-          <button id="open-notifications" class="icon-button top-icon-btn" type="button" aria-label="Notificações" title="Notificações">
-            <i data-lucide="bell"></i>
-            ${unread ? `<span class="badge-dot">${unread}</span>` : ""}
-          </button>
-
-          <button id="quick-new-ticket" class="primary-button compact tech-quick-btn" type="button">
-            <i data-lucide="square-plus"></i>
-            Novo
-          </button>
-        </div>
-      </header>
+        </header>
+      ` : ""}
 
       <div class="app-body-layout ${isCollapsed ? 'collapsed' : ''}">
         <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle" type="button" aria-label="${isCollapsed ? 'Abrir menu' : 'Fechar menu'}" aria-expanded="${isCollapsed ? 'false' : 'true'}">
