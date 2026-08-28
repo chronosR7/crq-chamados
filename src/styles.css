@@ -11088,4 +11088,84 @@ html.theme-switching .focus-panel:hover {
     font-size: 0.72rem !important;
   }
 }
+
+/* 53. Camada final do detalhe aberto */
+body:has(.ticket-detail-overlay) .top-nav-bar,
+.app-shell.ticket-detail-active > .top-nav-bar {
+  display: none !important;
+}
+
+body:has(.ticket-detail-overlay) .ticket-detail-overlay {
+  z-index: 2147483000 !important;
+}
+
+.ticket-detail-dialog > .detail-panel-controls {
+  position: relative !important;
+  z-index: 1 !important;
+  isolation: isolate;
+}
+
+.ticket-detail-dialog > .detail-panel-controls .detail-close-button {
+  position: relative !important;
+  z-index: 2 !important;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Anexos compactos: o nome nunca amplia a coluna nem domina o conteúdo. */
+.ticket-context-sidebar .detail-attachments-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.ticket-context-sidebar .attachment-card {
+  min-width: 0;
+  padding: 6px;
+  gap: 4px;
+  border-radius: 8px;
+}
+
+.ticket-context-sidebar .attachment-card-thumb {
+  height: 54px;
+  border-radius: 6px;
+}
+
+.ticket-context-sidebar .attachment-card-info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ticket-context-sidebar .attachment-card-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text) !important;
+  font-size: 0.65rem !important;
+  font-weight: 650;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ticket-context-sidebar .attachment-card-size {
+  font-size: 0.62rem !important;
+  line-height: 1.2;
+}
+
+.ticket-context-sidebar .attachment-card-icon {
+  height: 46px;
+  border-radius: 6px;
+}
+
+.ticket-context-sidebar .attachment-card-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+@media (max-width: 900px) {
+  .ticket-context-sidebar .detail-attachments-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    max-width: 560px;
+  }
+}
 }
