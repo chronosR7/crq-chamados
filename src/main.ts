@@ -2227,6 +2227,26 @@ function ticketHistoryEvents(ticket: Ticket): TicketEvent[] {
   return history;
 }
 
+/** Identifica o status representado por uma atualização automática. */
+function ticketEventStatus(event: TicketEvent): TicketStatus | "" {
+  const type = normalizeText(event.type ?? "");
+  const text = normalizeText(`${event.type ?? ""} ${event.message ?? ""}`);
+
+  if (type.includes("exclus") || type.includes("exclu")) return "excluido";
+  if (type.includes("fechad") || type.includes("fechamento")) return "fechado";
+  if (type.includes("soluc")) return "solucionado";
+  if (type.includes("pendenc")) return "pendente";
+  if (type.includes("planej") || type.includes("agend")) return "planejado";
+
+  // Compatibilidade com históricos antigos que registraram somente a mensagem.
+  if (text.includes("status planejado") || text.includes("status agendado")) return "planejado";
+  if (text.includes("status pendente")) return "pendente";
+  if (text.includes("status solucionado")) return "solucionado";
+  if (text.includes("status fechado")) return "fechado";
+  if (text.includes("status excluido")) return "excluido";
+  return "";
+}
+
 function renderTicketHistory(ticket: Ticket, viewer: User) {
   return ticketHistoryEvents(ticket)
     .slice()
@@ -2248,7 +2268,8 @@ function renderTicketHistory(ticket: Ticket, viewer: User) {
       const actorIdentity = isComment
         ? (actor ?? { fullName: actorRole === "tic" ? "Equipe TIC" : "Solicitante", avatarUrl: undefined })
         : { fullName: "Sistema", avatarUrl: undefined };
-      const bubbleClass = `${isOwnMessage ? "is-outgoing" : "is-incoming"} ${isPending ? "is-pending" : ""} ${isComment ? "is-comment" : "is-system"}`;
+      const notificationStatus = !isComment ? ticketEventStatus(item) : "";
+      const bubbleClass = `${isOwnMessage ? "is-outgoing" : "is-incoming"} ${isPending ? "is-pending" : ""} ${isComment ? "is-comment" : "is-system"} ${notificationStatus ? `status-${notificationStatus}` : ""}`;
       const contextLabel = isPending
         ? (viewer.role === "tic" ? "Pendência registrada" : "Pendência para responder")
         : isComment
