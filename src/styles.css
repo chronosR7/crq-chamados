@@ -11201,7 +11201,7 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   align-items: center !important;
 }
 
-.ticket-conversation-main .timeline-item.chat-message.is-system .chat-bubble {
+.ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .chat-bubble {
   width: 100% !important;
   max-width: none !important;
   justify-self: stretch !important;
@@ -11220,6 +11220,58 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
 .ticket-detail-dialog > .detail-panel-controls .detail-close-button {
   align-self: center !important;
   margin: 0 !important;
+  inset: auto !important;
   transform: none !important;
   line-height: 1 !important;
+}
+
+/* A descrição pertence à conversa; a lateral mantém apenas os arquivos. */
+.ticket-context-sidebar .ticket-attachments-card {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.ticket-context-sidebar .ticket-attachments-card .attachment-list {
+  margin-top: 10px;
+}
+
+/* Atualizações automáticas são contexto, não mensagens em destaque. */
+.ticket-conversation-main .timeline-item.chat-message.is-system .chat-bubble {
+  padding: 10px 13px !important;
+  border-style: solid !important;
+  border-left: 2px solid var(--line-strong) !important;
+  background: var(--surface-soft) !important;
+  box-shadow: none !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .timeline-heading strong {
+  color: var(--muted) !important;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .timeline-heading small,
+.ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .timeline-author {
+  color: var(--text-faint) !important;
+  font-size: 0.68rem;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .chat-bubble p {
+  color: var(--muted) !important;
+  font-size: 0.86rem;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .system-event-icon {
+  width: 26px !important;
+  height: 26px !important;
+  flex-basis: 26px !important;
+  color: var(--muted) !important;
+  background: transparent !important;
+  border-color: var(--line) !important;
+}
+
+.ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .system-event-icon svg {
+  width: 13px !important;
+  height: 13px !important;
 }

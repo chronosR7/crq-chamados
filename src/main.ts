@@ -2252,7 +2252,7 @@ function renderTicketHistory(ticket: Ticket, viewer: User) {
       const contextLabel = isPending
         ? (viewer.role === "tic" ? "Pendência registrada" : "Pendência para responder")
         : isComment
-          ? (actorRole === "tic" ? "Mensagem da TIC" : "Mensagem do solicitante")
+          ? actorIdentity.fullName
           : eventType;
       return `
         <article class="timeline-item chat-message ${bubbleClass}">
@@ -2264,7 +2264,7 @@ function renderTicketHistory(ticket: Ticket, viewer: User) {
             </div>
             <p>${escapeHtml(eventMessage)}</p>
             ${eventAttachments.length ? `<div class="attachment-list event-attachments">${renderAttachmentCards(eventAttachments)}</div>` : ""}
-            <small class="timeline-author">${isComment ? `${escapeHtml(actorIdentity.fullName)}${isOwnMessage ? " · Você" : ""}` : "Atualização automática do sistema"}</small>
+            <small class="timeline-author">${isComment ? `${actorRole === "tic" ? "Equipe TIC" : "Solicitante"}${isOwnMessage ? " · Você" : ""}` : "Atualização automática do sistema"}</small>
           </div>
         </article>
       `;
@@ -2304,12 +2304,11 @@ function renderTicketDetail(ticket: Ticket, user: User) {
           </div>
         ` : ''}
 
-        <div class="description-block ticket-description-card">
+        <div class="ticket-attachments-card">
           <div class="ticket-sidebar-heading compact">
-            <span class="section-kicker">Solicitação</span>
-            <h3>Descrição</h3>
+            <span class="section-kicker">Arquivos</span>
+            <h3>Anexos do chamado</h3>
           </div>
-          <p>${escapeHtml(ticket.description)}</p>
           <div class="attachment-list">
             ${renderAttachmentCards(ticket.attachments.filter((attachment) => !attachment.eventId))}
           </div>
