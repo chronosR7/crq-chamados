@@ -11280,11 +11280,11 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   height: 13px !important;
 }
 
-/* Cor de status nas atualizações automáticas: apenas a borda e o ícone
-   recebem destaque, mantendo a notificação leve em relação às mensagens. */
+/* Cor de status nas atualizações automáticas: o próprio balão recebe uma
+   superfície colorida, enquanto as conversas humanas permanecem neutras. */
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-planejado .chat-bubble {
-  border-left-color: #6366f1 !important;
-  background: color-mix(in srgb, var(--surface-soft) 93%, #6366f1 7%) !important;
+  border-left: 4px solid #6366f1 !important;
+  background: color-mix(in srgb, var(--surface-soft) 78%, #6366f1 22%) !important;
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-planejado .system-event-icon {
@@ -11293,8 +11293,8 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-pendente .chat-bubble {
-  border-left-color: var(--amber) !important;
-  background: color-mix(in srgb, var(--surface-soft) 88%, var(--amber) 12%) !important;
+  border-left: 4px solid var(--amber) !important;
+  background: color-mix(in srgb, var(--surface-soft) 74%, var(--amber) 26%) !important;
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-pendente .system-event-icon {
@@ -11303,8 +11303,8 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-solucionado .chat-bubble {
-  border-left-color: var(--teal) !important;
-  background: color-mix(in srgb, var(--surface-soft) 93%, var(--teal) 7%) !important;
+  border-left: 4px solid var(--teal) !important;
+  background: color-mix(in srgb, var(--surface-soft) 78%, var(--teal) 22%) !important;
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-solucionado .system-event-icon {
@@ -11313,8 +11313,8 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-fechado .chat-bubble {
-  border-left-color: #64748b !important;
-  background: color-mix(in srgb, var(--surface-soft) 93%, #64748b 7%) !important;
+  border-left: 4px solid #64748b !important;
+  background: color-mix(in srgb, var(--surface-soft) 78%, #64748b 22%) !important;
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-fechado .system-event-icon {
@@ -11323,8 +11323,8 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-excluido .chat-bubble {
-  border-left-color: var(--red) !important;
-  background: color-mix(in srgb, var(--surface-soft) 93%, var(--red) 7%) !important;
+  border-left: 4px solid var(--red) !important;
+  background: color-mix(in srgb, var(--surface-soft) 78%, var(--red) 22%) !important;
 }
 
 .ticket-conversation-main .timeline-item.chat-message.is-system.status-excluido .system-event-icon {
