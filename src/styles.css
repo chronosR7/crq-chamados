@@ -11288,6 +11288,45 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   overflow: visible !important;
 }
 
+/* A lista do chat usa uma coluna com rolagem própria. Assim cada mensagem
+   conserva sua altura natural e nunca invade o registro seguinte. */
+.ticket-conversation-main > .ticket-conversation {
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+}
+
+.ticket-conversation-main > .ticket-conversation > .conversation-heading {
+  flex: 0 0 auto;
+}
+
+.ticket-conversation-main .conversation-list {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  align-content: normal !important;
+  min-height: 0 !important;
+  padding: 4px 12px 24px 4px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.ticket-conversation-main .conversation-list > .timeline-item.chat-message {
+  flex: 0 0 auto !important;
+  align-self: flex-start;
+}
+
+.ticket-conversation-main .conversation-list > .timeline-item.chat-message.is-outgoing {
+  align-self: flex-end;
+}
+
+.ticket-conversation-main .conversation-list > .timeline-item.chat-message.is-system {
+  align-self: stretch;
+}
+
 /* Miniaturas mostram a imagem completa, sem recorte forçado pelo cover. */
 .ticket-conversation-main .attachment-card-thumb img,
 .ticket-context-sidebar .attachment-card-thumb img {
