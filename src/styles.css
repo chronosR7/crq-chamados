@@ -11207,3 +11207,19 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   justify-self: stretch !important;
   box-sizing: border-box;
 }
+
+/* Cabeçalho do atendimento: o retorno fica centrado na faixa própria, sem
+   encostar na borda inferior nem herdar o posicionamento do layout antigo. */
+.ticket-detail-dialog > .detail-panel-controls {
+  height: 58px !important;
+  min-height: 58px !important;
+  box-sizing: border-box !important;
+  align-items: center !important;
+}
+
+.ticket-detail-dialog > .detail-panel-controls .detail-close-button {
+  align-self: center !important;
+  margin: 0 !important;
+  transform: none !important;
+  line-height: 1 !important;
+}
