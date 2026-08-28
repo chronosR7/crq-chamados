@@ -10916,9 +10916,176 @@ html.theme-switching .focus-panel:hover {
     -ms-overflow-style: none !important;
   }
 
-  .sidebar .main-nav::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
+.sidebar .main-nav::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* 52. Estado de atendimento aberto
+   Mantém o workspace acima da navegação global e garante que a sidebar não
+   atravesse o overlay do chamado. */
+.app-shell.ticket-detail-active > .top-nav-bar {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@media (min-width: 901px) {
+  .app-shell.ticket-detail-active .sidebar,
+  .app-shell.ticket-detail-active [data-theme="dark"] .sidebar {
+    width: 74px !important;
+    min-width: 74px !important;
+    padding: 16px 8px !important;
   }
+
+  .app-shell.ticket-detail-active .sidebar .profile-block {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 4px !important;
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .app-shell.ticket-detail-active .sidebar .profile-meta,
+  .app-shell.ticket-detail-active .sidebar .sidebar-profile-departments,
+  .app-shell.ticket-detail-active .sidebar .nav-section-label,
+  .app-shell.ticket-detail-active .sidebar .nav-label,
+  .app-shell.ticket-detail-active .sidebar .action-label,
+  .app-shell.ticket-detail-active .sidebar .sidebar-online-widget {
+    display: none !important;
+  }
+
+  .app-shell.ticket-detail-active .sidebar .sidebar-profile-main,
+  .app-shell.ticket-detail-active .sidebar .main-nav {
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .app-shell.ticket-detail-active .sidebar .sidebar-profile-main {
+    display: flex !important;
+    padding: 0 !important;
+  }
+
+  .app-shell.ticket-detail-active .sidebar .sidebar-avatar-button,
+  .app-shell.ticket-detail-active .sidebar .sidebar-avatar-button .avatar {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+  }
+
+  .app-shell.ticket-detail-active .sidebar .main-nav {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+  }
+
+  .app-shell.ticket-detail-active .sidebar .nav-button,
+  .app-shell.ticket-detail-active .sidebar .sidebar-action {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    margin-inline: auto !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+}
+
+/* Alinhamento consistente dos participantes da conversa. O espaço do avatar
+   tem tamanho fixo, então cada bolha começa na mesma coluna. */
+.ticket-conversation-main .timeline-avatar {
+  display: flex !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin-top: 2px;
+}
+
+.ticket-conversation-main .timeline-avatar .avatar.ticket-avatar-sm {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  border-radius: 50% !important;
+  font-size: 0.67rem !important;
+}
+
+.ticket-conversation-main .system-event-icon {
+  width: 30px !important;
+  height: 30px !important;
+  flex: 0 0 30px;
+}
+
+.ticket-detail-dialog,
+.ticket-detail-dialog button,
+.ticket-detail-dialog input,
+.ticket-detail-dialog select,
+.ticket-detail-dialog textarea {
+  font-family: var(--font-body) !important;
+}
+
+.ticket-detail-dialog h1,
+.ticket-detail-dialog h2,
+.ticket-detail-dialog h3,
+.ticket-detail-dialog strong,
+.ticket-detail-dialog .primary-button,
+.ticket-detail-dialog .secondary-button,
+.ticket-detail-dialog .detail-close-button {
+  font-family: var(--font-heading) !important;
+}
+
+/* O anexo funciona como um controle compacto, mas claramente clicável. */
+.ticket-conversation-main .comment-composer-footer .comment-file-drop {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 38px !important;
+  padding: 0 11px !important;
+  border: 1px solid var(--line-strong) !important;
+  border-radius: 8px !important;
+  background: var(--surface-soft) !important;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.ticket-conversation-main .comment-composer-footer .comment-file-drop:hover,
+.ticket-conversation-main .comment-composer-footer .comment-file-drop:focus-within {
+  border-color: var(--brand) !important;
+  background: var(--brand-light) !important;
+}
+
+.ticket-conversation-main .comment-composer-footer .comment-file-drop .file-drop-message {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 7px !important;
+  color: var(--text) !important;
+}
+
+.ticket-conversation-main .comment-composer-footer .comment-file-drop .file-drop-message span {
+  color: var(--text) !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+}
+
+.ticket-conversation-main .comment-composer-footer .comment-file-drop .file-drop-message svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--brand) !important;
+}
+
+@media (max-width: 620px) {
+  .ticket-conversation-main .comment-composer-footer .comment-file-drop {
+    min-height: 36px !important;
+    padding-inline: 9px !important;
+  }
+
+  .ticket-conversation-main .comment-composer-footer .comment-file-drop .file-drop-message span {
+    font-size: 0.72rem !important;
+  }
+}
 }
