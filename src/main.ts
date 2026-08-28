@@ -650,8 +650,13 @@ function showPendingTicketPopup(notifications: NotificationItem[]) {
   };
 
   overlay.querySelector<HTMLButtonElement>("#pending-ticket-dismiss")?.addEventListener("click", close);
-  overlay.querySelector<HTMLButtonElement>("#pending-ticket-open")?.addEventListener("click", () => {
+  overlay.querySelector<HTMLButtonElement>("#pending-ticket-open")?.addEventListener("click", async () => {
     overlay.remove();
+    await Promise.all(
+      notifications
+        .filter((notification) => notification.ticketId === firstTicketId)
+        .map((notification) => markNotificationAsRead(notification.id))
+    );
     openTicket(firstTicketId);
   });
 }
@@ -940,6 +945,7 @@ function renderLogin() {
 // Desenha a estrutura completa da plataforma após o login
 function renderShell(user: User) {
   const unread = getUserNotifications(user).filter((n) => !n.read).length;
+  const unreadLabel = unread === 1 ? "1 notificação não lida" : `${unread} notificações não lidas`;
   // Ao abrir um chamado, a navegação principal reduz automaticamente para que
   // o workspace de atendimento tenha espaço e não fique transpassando a tela.
   const ticketDetailActive = state.view === "tickets" && state.ticketDetailOpen;
@@ -972,9 +978,9 @@ function renderShell(user: User) {
               <i data-lucide="${localStorage.getItem(THEME_STORAGE_KEY) === 'dark' ? 'sun' : 'moon'}"></i>
             </button>
 
-            <button id="open-notifications" class="icon-button top-icon-btn" type="button" aria-label="Notificações" title="Notificações">
+            <button id="open-notifications" class="icon-button top-icon-btn notification-trigger ${unread ? "has-unread" : ""}" type="button" aria-label="${unread ? unreadLabel : "Notificações"}" title="${unread ? unreadLabel : "Notificações"}">
               <i data-lucide="bell"></i>
-              ${unread ? `<span class="badge-dot">${unread}</span>` : ""}
+              ${unread ? `<span class="badge-dot notification-count" aria-hidden="true">${unread}</span>` : ""}
             </button>
 
             <button id="quick-new-ticket" class="primary-button compact tech-quick-btn" type="button">
@@ -1022,7 +1028,7 @@ function renderShell(user: User) {
             ${user.role === "tic" ? navButton("departments", "folder-open", "Departamentos") : ""}
             ${user.role !== "usuario" ? navButton("reports", "file-text", "Relatórios") : ""}
             ${navButton("knowledge", "book-open", "Base de conhecimento")}
-            ${navButton("notifications", "bell", `Notificações${unread ? ` (${unread})` : ""}`)}
+            ${navButton("notifications", "bell", "Notificações", unread)}
             ${user.role === "tic" ? navButton("trash", "trash-2", "Lixeira") : ""}
             ${navButton("settings", "settings", "Configurações")}
             ${navButton("accessibility", "sliders-horizontal", "Acessibilidade")}
@@ -1118,11 +1124,18 @@ function renderForcedPasswordChange() {
 
 
 /** Cria um botão de navegação para a barra lateral */
-function navButton(view: View, icon: string, label: string) {
+function navButton(view: View, icon: string, label: string, badgeCount = 0) {
+  const hasUnread = view === "notifications" && badgeCount > 0;
+  const accessibleLabel = hasUnread
+    ? `${label}: ${badgeCount} ${badgeCount === 1 ? "não lida" : "não lidas"}`
+    : label;
+
   return `
-    <button class="nav-button ${state.view === view ? "active" : ""}" type="button" data-view="${view}" title="${escapeHtml(label)}">
+    <button class="nav-button ${state.view === view ? "active" : ""} ${hasUnread ? "notification-nav-button has-unread" : ""}" type="button" data-view="${view}" title="${escapeHtml(accessibleLabel)}" aria-label="${escapeHtml(accessibleLabel)}">
       <i data-lucide="${icon}"></i>
       <span class="nav-label">${label}</span>
+      ${hasUnread ? `<span class="nav-notification-count" aria-hidden="true">${badgeCount}</span>` : ""}
+      ${hasUnread ? `<span class="nav-notification-wave" aria-hidden="true"></span>` : ""}
     </button>
   `;
 }
@@ -2966,7 +2979,7 @@ function renderNotifications(user: User) {
       <div class="notification-list">
         ${items.length
       ? items.map((item) => `
-            <button class="notification-item ${item.read ? "" : "unread"}" type="button" ${item.ticketId ? `data-open-ticket="${item.ticketId}"` : item.title === "Novo tutorial disponível" ? `data-open-knowledge` : ""}>
+            <button class="notification-item ${item.read ? "" : "unread"}" type="button" data-notification-id="${escapeHtml(item.id)}" ${item.ticketId ? `data-open-ticket="${item.ticketId}"` : item.title === "Novo tutorial disponível" ? `data-open-knowledge` : ""}>
               <span class="channel ${item.channel}">${item.channel}</span>
               <span>
                 <strong>${escapeHtml(item.title)}</strong>
@@ -2979,6 +2992,25 @@ function renderNotifications(user: User) {
       </div>
     </section>
   `;
+}
+
+/** Marca um aviso individual como lido antes de abrir o destino relacionado. */
+async function markNotificationAsRead(notificationId: string) {
+  const notification = data.notifications.find((item) => item.id === notificationId);
+  if (!notification || notification.read) return true;
+
+  // O contador precisa reagir imediatamente, mas o estado só permanece lido
+  // se o servidor confirmar a atualização. Assim uma falha de RLS/conexão não
+  // faz o usuário perder o alerta visual na próxima sincronização.
+  notification.read = true;
+  try {
+    await markNotificationsReadInSupabase([notification.id]);
+    return true;
+  } catch (error) {
+    notification.read = false;
+    showSystemAlert(error instanceof Error ? error.message : "Não foi possível marcar a notificação como lida.");
+    return false;
+  }
 }
 
 // ============================================================
@@ -3497,13 +3529,13 @@ function bindEvents() {
     requestAnimationFrame(() => ticketDetailDialog.focus());
   }
 
-  document.querySelectorAll<HTMLElement>("[data-open-ticket]").forEach((el) => {
+  document.querySelectorAll<HTMLElement>("[data-open-ticket]:not(.notification-item)").forEach((el) => {
     el.addEventListener("click", () => openTicket(Number(el.dataset.openTicket)));
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter") openTicket(Number(el.dataset.openTicket));
     });
   });
-  document.querySelectorAll<HTMLElement>("[data-open-knowledge]").forEach((element) => {
+  document.querySelectorAll<HTMLElement>("[data-open-knowledge]:not(.notification-item)").forEach((element) => {
     element.addEventListener("click", async () => {
       const remoteTutorials = await loadKnowledgeTutorials();
       if (remoteTutorials.length) knowledgeTutorials = remoteTutorials;
@@ -5278,6 +5310,30 @@ function bindDepartmentForms() {
 
 // ===== NOTIFICATIONS =====
 function bindNotifications() {
+  document.querySelectorAll<HTMLButtonElement>(".notification-item[data-notification-id]").forEach((item) => {
+    item.addEventListener("click", async () => {
+      const notificationId = item.dataset.notificationId;
+      if (!notificationId || !(await markNotificationAsRead(notificationId))) return;
+
+      const ticketId = Number(item.dataset.openTicket);
+      if (item.dataset.openTicket && Number.isFinite(ticketId)) {
+        openTicket(ticketId);
+        return;
+      }
+
+      if (item.hasAttribute("data-open-knowledge")) {
+        const remoteTutorials = await loadKnowledgeTutorials();
+        if (remoteTutorials.length) knowledgeTutorials = remoteTutorials;
+        state.view = "knowledge";
+        render();
+        return;
+      }
+
+      // Avisos sem destino continuam na central, mas já deixam de pulsar.
+      render();
+    });
+  });
+
   document.querySelector<HTMLButtonElement>("#clear-notifications")?.addEventListener("click", () => {
     const user = currentUser();
     if (!user) return;
