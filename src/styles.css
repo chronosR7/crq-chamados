@@ -11386,3 +11386,212 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   object-position: center;
   background: var(--surface);
 }
+
+/* 55. Alertas de notificações não lidas
+   O destaque permanece enquanto existir ao menos um aviso não lido. As ondas
+   ficam restritas aos controles de notificação; o restante da navegação e as
+   conversas não recebem animação. */
+.notification-trigger.has-unread,
+.nav-button.notification-nav-button.has-unread {
+  overflow: visible !important;
+  isolation: isolate;
+  border-color: color-mix(in srgb, var(--red) 58%, var(--line-strong)) !important;
+  color: var(--red) !important;
+}
+
+.notification-trigger.has-unread {
+  animation: notification-button-pulse 2.4s ease-in-out infinite;
+}
+
+.notification-trigger.has-unread::before,
+.notification-trigger.has-unread::after {
+  position: absolute;
+  inset: -5px;
+  z-index: 0;
+  display: block;
+  border: 2px solid var(--red);
+  border-color: color-mix(in srgb, var(--red) 76%, transparent);
+  border-radius: inherit;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.82);
+  animation: notification-wave 2.4s ease-out infinite;
+}
+
+.notification-trigger.has-unread::after {
+  animation-delay: 1.2s;
+}
+
+.nav-button.notification-nav-button.has-unread .nav-notification-wave,
+.nav-button.notification-nav-button.has-unread .nav-notification-wave::after {
+  position: absolute;
+  inset: -5px;
+  z-index: 0;
+  display: block;
+  border: 2px solid var(--red);
+  border-color: color-mix(in srgb, var(--red) 76%, transparent);
+  border-radius: inherit;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.82);
+  animation: notification-wave 2.4s ease-out infinite;
+}
+
+.nav-button.notification-nav-button.has-unread .nav-notification-wave::after {
+  inset: 0;
+  animation-delay: 1.2s;
+}
+
+.notification-trigger.has-unread > svg {
+  position: relative;
+  z-index: 1;
+  color: var(--red);
+  animation: notification-bell-pulse 2.4s ease-in-out infinite;
+}
+
+.notification-count {
+  z-index: 2;
+  isolation: isolate;
+}
+
+.notification-trigger.has-unread .notification-count,
+.nav-button.notification-nav-button.has-unread .nav-notification-count {
+  animation: notification-count-pulse 1.65s ease-in-out infinite;
+}
+
+.notification-trigger.has-unread .notification-count::before,
+.notification-trigger.has-unread .notification-count::after,
+.nav-button.notification-nav-button.has-unread .nav-notification-count::before,
+.nav-button.notification-nav-button.has-unread .nav-notification-count::after {
+  position: absolute;
+  inset: -4px;
+  z-index: 0;
+  display: block;
+  border: 1px solid var(--red);
+  border-color: color-mix(in srgb, var(--red) 72%, transparent);
+  border-radius: inherit;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(.78);
+  animation: notification-wave 1.8s ease-out infinite;
+}
+
+.notification-trigger.has-unread .notification-count::after,
+.nav-button.notification-nav-button.has-unread .nav-notification-count::after {
+  animation-delay: .9s;
+}
+
+.nav-button.notification-nav-button.has-unread {
+  animation: notification-button-pulse 2.4s ease-in-out infinite;
+}
+
+.nav-notification-count {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  min-width: 24px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--red) 64%, transparent);
+  border-radius: 999px;
+  color: #fff;
+  background: var(--red);
+  box-shadow: 0 2px 7px color-mix(in srgb, var(--red) 34%, transparent);
+  font-size: .68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+@keyframes notification-wave {
+  0% { opacity: .72; transform: scale(.78); }
+  70%, 100% { opacity: 0; transform: scale(1.48); }
+}
+
+@keyframes notification-button-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, .28);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(244, 63, 94, 0);
+  }
+}
+
+@keyframes notification-count-pulse {
+  0%, 100% {
+    box-shadow: 0 2px 7px color-mix(in srgb, var(--red) 34%, transparent);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 20%, transparent),
+      0 3px 10px color-mix(in srgb, var(--red) 42%, transparent);
+    transform: scale(1.1);
+  }
+}
+
+@keyframes notification-bell-pulse {
+  0%, 100% { transform: rotate(0) scale(1); }
+  8% { transform: rotate(-10deg) scale(1.04); }
+  16% { transform: rotate(9deg) scale(1.04); }
+  24% { transform: rotate(-5deg) scale(1.02); }
+  32% { transform: rotate(0) scale(1); }
+}
+
+@media (max-width: 760px) {
+  .nav-notification-count {
+    min-width: 21px;
+    height: 20px;
+    padding-inline: 5px;
+    font-size: .64rem;
+  }
+}
+
+.sidebar.collapsed .nav-notification-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 19px;
+  height: 19px;
+  margin: 0;
+  padding: 0 4px;
+  font-size: .61rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-trigger.has-unread,
+  .notification-trigger.has-unread::before,
+  .notification-trigger.has-unread::after,
+  .notification-trigger.has-unread > svg,
+  .notification-trigger.has-unread .notification-count,
+  .notification-trigger.has-unread .notification-count::before,
+  .notification-trigger.has-unread .notification-count::after,
+  .nav-button.notification-nav-button.has-unread,
+  .nav-button.notification-nav-button.has-unread .nav-notification-count,
+  .nav-button.notification-nav-button.has-unread .nav-notification-wave,
+  .nav-button.notification-nav-button.has-unread .nav-notification-wave::after,
+  .nav-button.notification-nav-button.has-unread .nav-notification-count::before,
+  .nav-button.notification-nav-button.has-unread .nav-notification-count::after {
+    animation: none !important;
+  }
+}
+
+html.low-power-mode .notification-trigger.has-unread,
+html.low-power-mode .notification-trigger.has-unread::before,
+html.low-power-mode .notification-trigger.has-unread::after,
+html.low-power-mode .notification-trigger.has-unread > svg,
+html.low-power-mode .notification-trigger.has-unread .notification-count,
+html.low-power-mode .notification-trigger.has-unread .notification-count::before,
+html.low-power-mode .notification-trigger.has-unread .notification-count::after,
+html.low-power-mode .nav-button.notification-nav-button.has-unread,
+html.low-power-mode .nav-button.notification-nav-button.has-unread .nav-notification-count,
+html.low-power-mode .nav-button.notification-nav-button.has-unread .nav-notification-wave,
+html.low-power-mode .nav-button.notification-nav-button.has-unread .nav-notification-wave::after,
+html.low-power-mode .nav-button.notification-nav-button.has-unread .nav-notification-count::before,
+html.low-power-mode .nav-button.notification-nav-button.has-unread .nav-notification-count::after {
+  animation: none !important;
+}
