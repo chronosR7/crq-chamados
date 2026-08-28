@@ -940,7 +940,10 @@ function renderLogin() {
 // Desenha a estrutura completa da plataforma após o login
 function renderShell(user: User) {
   const unread = getUserNotifications(user).filter((n) => !n.read).length;
-  const isCollapsed = Boolean(state.sidebarCollapsed);
+  // Ao abrir um chamado, a navegação principal reduz automaticamente para que
+  // o workspace de atendimento tenha espaço e não fique transpassando a tela.
+  const ticketDetailActive = state.view === "tickets" && state.ticketDetailOpen;
+  const isCollapsed = Boolean(state.sidebarCollapsed || ticketDetailActive);
   const presenceUsers = Array.from(new Map(
     data.users
       .filter((candidate) => candidate.active !== false && candidate.id && candidate.email)
@@ -954,7 +957,7 @@ function renderShell(user: User) {
 
   return `
     <div class="tech-bg-overlay"></div>
-    <div class="app-shell ${isCollapsed ? 'sidebar-collapsed' : ''}">
+    <div class="app-shell ${isCollapsed ? 'sidebar-collapsed' : ''} ${ticketDetailActive ? 'ticket-detail-active' : ''}">
       
       <!-- MENU SUPERIOR TECNOLÓGICO -->
       <header class="top-nav-bar" aria-label="Ações rápidas">
@@ -2301,8 +2304,8 @@ function renderTicketDetail(ticket: Ticket, user: User) {
             ${statusPill(ticket.status)}
           </div>
           <div class="conversation-summary">
-            <span><i data-lucide="messages-square"></i> ${ticketHistoryEvents(ticket).length} registro${ticketHistoryEvents(ticket).length === 1 ? "" : "s"}</span>
-            <span><i data-lucide="clock-3"></i> Atualizado ${formatDate(ticket.updatedAt)}</span>
+            <span><i data-lucide="message-circle"></i> ${ticketHistoryEvents(ticket).length} registro${ticketHistoryEvents(ticket).length === 1 ? "" : "s"}</span>
+            <span><i data-lucide="clock"></i> Atualizado ${formatDate(ticket.updatedAt)}</span>
           </div>
         </header>
 
@@ -3292,6 +3295,9 @@ function bindEvents() {
     render();
   });
   const toggleSidebar = () => {
+    // O detalhe aberto reserva a largura para a conversa; a sidebar volta a
+    // poder ser expandida assim que o usuário retornar à fila.
+    if (state.view === "tickets" && state.ticketDetailOpen) return;
     state.sidebarCollapsed = !state.sidebarCollapsed;
     try {
       localStorage.setItem("crq-sidebar-collapsed", String(state.sidebarCollapsed));
