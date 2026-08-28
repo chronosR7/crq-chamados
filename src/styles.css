@@ -11221,6 +11221,10 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   align-self: center !important;
   margin: 0 !important;
   inset: auto !important;
+  top: 0 !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
   transform: none !important;
   line-height: 1 !important;
 }
@@ -11274,4 +11278,20 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
 .ticket-conversation-main .timeline-item.chat-message.is-system:not(.is-pending) .system-event-icon svg {
   width: 13px !important;
   height: 13px !important;
+}
+
+/* Conteúdo longo nunca deve ser escondido pelo estilo genérico da timeline. */
+.ticket-conversation-main .timeline-item.chat-message,
+.ticket-conversation-main .timeline-item.chat-message .chat-bubble {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* Miniaturas mostram a imagem completa, sem recorte forçado pelo cover. */
+.ticket-conversation-main .attachment-card-thumb img,
+.ticket-context-sidebar .attachment-card-thumb img {
+  object-fit: contain !important;
+  object-position: center;
+  background: var(--surface);
 }
