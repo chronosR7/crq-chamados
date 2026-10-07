@@ -2925,6 +2925,13 @@ td small {
   background: #f7faf6;
 }
 
+.ticket-saving-indicator {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .tic-actions .action-row {
   grid-column: 1 / -1;
   display: grid;

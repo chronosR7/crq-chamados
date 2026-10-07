@@ -80,14 +80,16 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
-const APP_VERSION = "1.4.2";
-const CURRENT_RELEASE_NOTE_VERSION = "v1.4.2-responsive-ticket-form";
+const APP_VERSION = "1.4.3";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.4.3-faster-ticket-actions";
 const THEME_STORAGE_KEY = "crq-theme";
 const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
 const TIC_DASHBOARD_WIDGET_ORDER = ["category", "department", "requester", "status"] as const;
 type TicDashboardWidgetId = typeof TIC_DASHBOARD_WIDGET_ORDER[number];
 let releaseNoteShownThisSession = false;
+const pendingTicketUpdates = new Set<number>();
+let realtimeRefreshDeferred = false;
 let themeSwitchTimer: number | undefined;
 let themeOverlayTimer: number | undefined;
 
@@ -273,8 +275,16 @@ async function reloadOperationalDataForUser(userId: string, attempts = 3): Promi
 }
 
 async function refreshFromServer() {
+  if (pendingTicketUpdates.size > 0) {
+    realtimeRefreshDeferred = true;
+    return;
+  }
   const remote = await loadRemoteDataWithRetry(state.currentUserId, 2);
   if (!remote) return;
+  if (pendingTicketUpdates.size > 0) {
+    realtimeRefreshDeferred = true;
+    return;
+  }
   const selectedId = state.selectedTicketId;
   data = remote;
   ensureSeedData();
@@ -850,16 +860,16 @@ function showReleaseNoteIfNeeded(user: User) {
     <article class="release-note-modal" role="dialog" aria-modal="true" aria-labelledby="release-note-title" aria-describedby="release-note-summary" tabindex="-1">
       <header class="release-note-header">
         <div class="release-note-version"><i data-lucide="sparkles"></i><span>Atualização disponível</span></div>
-        <h2 id="release-note-title">Nota de Atualização — Versão v1.4.2</h2>
+        <h2 id="release-note-title">Nota de Atualização — Versão v1.4.3</h2>
         <p>Central de Atendimento TIC <span aria-hidden="true">|</span> CRQ-12</p>
       </header>
       <div class="release-note-content">
-        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4.2</strong> ajusta a apresentação dos campos do chamado para acompanhar melhor o tamanho da tela.</p>
+        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4.3</strong> deixa as alterações do atendimento mais ágeis e imediatas.</p>
         <section>
           <h3><i data-lucide="tag"></i>Identificação do equipamento</h3>
           <ul>
-            <li>O formulário se reorganiza automaticamente em colunas conforme o espaço disponível, sem separar os indicadores de campo obrigatório dos rótulos;</li>
-            <li>Modelo e patrimônio continuam em campos separados e obrigatórios para a categoria <strong>Equipamentos</strong>.</li>
+            <li>Ao alterar responsável, prioridade ou andamento, a tela reflete a mudança imediatamente enquanto a gravação é concluída;</li>
+            <li>O sistema mostra quando a alteração está sendo salva e reverte a tela se o servidor não aceitar a mudança.</li>
           </ul>
         </section>
         <p class="release-note-closing">A identificação completa ajuda a equipe TIC a localizar o equipamento e iniciar o atendimento com as informações necessárias.</p>
@@ -2390,12 +2400,15 @@ function renderTicketDetail(ticket: Ticket, user: User) {
 function renderTicActions(ticket: Ticket) {
   const ticUsers = data.users.filter((u) => u.role === "tic" && u.active);
   const reopenLocked = ticketRequiresReopen(ticket);
-  const lockedAttr = reopenLocked ? "disabled aria-disabled=\"true\"" : "";
+  const isSaving = pendingTicketUpdates.has(ticket.id);
+  const savingAttr = isSaving ? "disabled aria-disabled=\"true\"" : "";
+  const lockedAttr = reopenLocked || isSaving ? "disabled aria-disabled=\"true\"" : "";
   const canStartTicket = ticket.status === "novo" || ticket.status === "pendente";
-  const startDisabledAttr = reopenLocked || !canStartTicket ? "disabled aria-disabled=\"true\"" : "";
+  const startDisabledAttr = reopenLocked || isSaving || !canStartTicket ? "disabled aria-disabled=\"true\"" : "";
   const lockedLabel = ticket.status === "fechado" ? "Chamado fechado" : "Chamado solucionado";
   return `
     <div class="tic-actions ${reopenLocked ? "ticket-locked" : ""}">
+      ${isSaving ? `<p class="ticket-saving-indicator" role="status">Salvando alterações…</p>` : ""}
       ${reopenLocked ? `
         <div class="ticket-locked-notice">
           <strong>${lockedLabel}</strong>
@@ -2404,14 +2417,14 @@ function renderTicActions(ticket: Ticket) {
       ` : ""}
       <label>
         Responsável
-        <select id="ticket-assignee" ${reopenLocked ? "disabled" : ""}>
+        <select id="ticket-assignee" ${reopenLocked ? "disabled" : savingAttr}>
           <option value="">Fila TIC</option>
           ${ticUsers.map((u) => `<option value="${u.id}" ${ticket.assignedId === u.id ? "selected" : ""}>${escapeHtml(u.fullName)}</option>`).join("")}
         </select>
       </label>
       <label>
         Prioridade
-        <select id="ticket-priority" ${reopenLocked ? "disabled" : ""}>
+        <select id="ticket-priority" ${reopenLocked ? "disabled" : savingAttr}>
           ${Object.entries(priorityLabels).map(([p, label]) => `<option value="${p}" ${ticket.priority === p ? "selected" : ""}>${label}</option>`).join("")}
         </select>
       </label>
@@ -2455,12 +2468,13 @@ function renderUserActions(ticket: Ticket, user: User) {
   const isRequester = ticket.requesterId === user.id;
   const isManagerOfDept = user.role === "gestor" && visibleDepartmentIds(user).includes(ticket.departmentId);
   const canDelete = (isRequester || isManagerOfDept) && ticket.status !== "excluido" && !ticketRequiresReopen(ticket);
+  const savingAttr = pendingTicketUpdates.has(ticket.id) ? "disabled aria-disabled=\"true\"" : "";
 
   if (!canDelete) return "";
 
   return `
     <div class="user-ticket-actions" style="margin-bottom: 16px; display: flex; justify-content: flex-end;">
-      <button class="danger-button ticket-action" type="button" data-action="delete" style="font-size: 0.82rem; padding: 6px 14px;">
+      <button class="danger-button ticket-action" type="button" data-action="delete" ${savingAttr} style="font-size: 0.82rem; padding: 6px 14px;">
         <i data-lucide="trash-2"></i>
         Excluir Chamado
       </button>
@@ -4717,6 +4731,7 @@ async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => voi
   const user = currentUser();
   const ticket = data.tickets.find((t) => t.id === state.selectedTicketId);
   if (!user || !ticket) return;
+  if (pendingTicketUpdates.has(ticket.id)) return;
 
   const isRequester = ticket.requesterId === user.id;
   const isManagerOfDept = user.role === "gestor" && visibleDepartmentIds(user).includes(ticket.departmentId);
@@ -4728,6 +4743,8 @@ async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => voi
   const eventIdsBefore = new Set(ticket.events.map((event) => event.id));
   const notificationIdsBefore = new Set(data.notifications.map((notification) => notification.id));
   mutator(ticket, user);
+  pendingTicketUpdates.add(ticket.id);
+  render();
   try {
     if (isSupabaseConfigured()) {
       const updated = await updateTicketInSupabase(ticket);
@@ -4737,31 +4754,39 @@ async function updateSelectedTicket(mutator: (ticket: Ticket, user: User) => voi
       // alteração principal foi aceita, uma falha secundária não pode fazer a
       // interface fingir que o chamado voltou ao estado anterior.
       const newEvents = ticket.events.filter((event) => !eventIdsBefore.has(event.id));
-      for (const event of newEvents) {
-        try {
-          await createTicketEventInSupabase(ticket.id, event);
-        } catch (eventError) {
-          devWarn("Chamado atualizado, mas o histórico não foi sincronizado:", eventError);
-        }
-      }
-
       const newNotifications = data.notifications.filter(
         (notification) => !notificationIdsBefore.has(notification.id)
       );
-      try {
-        await createNotificationsInSupabase(newNotifications);
-      } catch (notificationError) {
-        devWarn("Chamado atualizado, mas as notificações não foram entregues:", notificationError);
-        data.notifications = data.notifications.filter((notification) => notificationIdsBefore.has(notification.id));
-      }
+      await Promise.all([
+        ...newEvents.map(async (event) => {
+          try {
+            await createTicketEventInSupabase(ticket.id, event);
+          } catch (eventError) {
+            devWarn("Chamado atualizado, mas o histórico não foi sincronizado:", eventError);
+          }
+        }),
+        (async () => {
+          try {
+            await createNotificationsInSupabase(newNotifications);
+          } catch (notificationError) {
+            devWarn("Chamado atualizado, mas as notificações não foram entregues:", notificationError);
+            data.notifications = data.notifications.filter((notification) => notificationIdsBefore.has(notification.id));
+          }
+        })()
+      ]);
     }
-    render();
     if (options.successMessage) showSystemAlert(options.successMessage);
   } catch (error) {
     Object.assign(ticket, ticketSnapshot);
     data.notifications = data.notifications.filter((notification) => notificationIdsBefore.has(notification.id));
     showSystemAlert(error instanceof Error ? error.message : "Não foi possível atualizar o chamado.");
+  } finally {
+    pendingTicketUpdates.delete(ticket.id);
     render();
+    if (realtimeRefreshDeferred) {
+      realtimeRefreshDeferred = false;
+      scheduleRealtimeRefresh();
+    }
   }
 }
 
@@ -4773,7 +4798,7 @@ function keepTicketInFocus(ticket: Ticket) {
 
 function handleTicketAction(action: string) {
   const ticket = data.tickets.find((t) => t.id === state.selectedTicketId);
-  if (!ticket) return;
+  if (!ticket || pendingTicketUpdates.has(ticket.id)) return;
 
   if (action === "reopen") {
     if (!ticketRequiresReopen(ticket)) return;
