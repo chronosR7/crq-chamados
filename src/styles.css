@@ -488,6 +488,15 @@ label {
 
 .ticket-form .form-grid {
   align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+
+.equipment-identifier-field > span {
+  display: block;
+}
+
+.required-marker {
+  color: var(--red);
 }
 
 input,
@@ -7937,6 +7946,10 @@ table tbody tr:hover {
   .detail-meta,
   .tic-actions .action-row {
     grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .ticket-form .form-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
   }
 
   .table-wrap,

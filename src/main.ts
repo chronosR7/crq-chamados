@@ -80,8 +80,8 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
-const APP_VERSION = "1.4.1";
-const CURRENT_RELEASE_NOTE_VERSION = "v1.4.1-equipment-details";
+const APP_VERSION = "1.4.2";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.4.2-responsive-ticket-form";
 const THEME_STORAGE_KEY = "crq-theme";
 const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
@@ -850,16 +850,16 @@ function showReleaseNoteIfNeeded(user: User) {
     <article class="release-note-modal" role="dialog" aria-modal="true" aria-labelledby="release-note-title" aria-describedby="release-note-summary" tabindex="-1">
       <header class="release-note-header">
         <div class="release-note-version"><i data-lucide="sparkles"></i><span>Atualização disponível</span></div>
-        <h2 id="release-note-title">Nota de Atualização — Versão v1.4.1</h2>
+        <h2 id="release-note-title">Nota de Atualização — Versão v1.4.2</h2>
         <p>Central de Atendimento TIC <span aria-hidden="true">|</span> CRQ-12</p>
       </header>
       <div class="release-note-content">
-        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4.1</strong> solicita modelo e patrimônio em campos separados nos chamados da categoria Equipamentos.</p>
+        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4.2</strong> ajusta a apresentação dos campos do chamado para acompanhar melhor o tamanho da tela.</p>
         <section>
           <h3><i data-lucide="tag"></i>Identificação do equipamento</h3>
           <ul>
-            <li>Ao selecionar a categoria <strong>Equipamentos</strong>, os campos <strong>Modelo do equipamento</strong> e <strong>Nº de patrimônio</strong> aparecem e se tornam obrigatórios;</li>
-            <li>As duas informações ficam salvas no chamado e visíveis nas propriedades da tela de atendimento.</li>
+            <li>O formulário se reorganiza automaticamente em colunas conforme o espaço disponível, sem separar os indicadores de campo obrigatório dos rótulos;</li>
+            <li>Modelo e patrimônio continuam em campos separados e obrigatórios para a categoria <strong>Equipamentos</strong>.</li>
           </ul>
         </section>
         <p class="release-note-closing">A identificação completa ajuda a equipe TIC a localizar o equipamento e iniciar o atendimento com as informações necessárias.</p>
@@ -2592,11 +2592,11 @@ function renderNewTicket(user: User) {
             </select>
           </label>
           <label class="equipment-identifier-field" hidden>
-            Modelo do equipamento <span aria-hidden="true">*</span>
+            <span>Modelo do equipamento <span class="required-marker" aria-hidden="true">*</span></span>
             <input name="equipmentModel" maxlength="120" placeholder="Ex.: HP LaserJet Pro M404" />
           </label>
           <label class="equipment-identifier-field" hidden>
-            Nº de patrimônio <span aria-hidden="true">*</span>
+            <span>Nº de patrimônio <span class="required-marker" aria-hidden="true">*</span></span>
             <input name="assetNumber" maxlength="80" placeholder="Ex.: 12345" />
           </label>
           <label>
