@@ -81,7 +81,7 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
 const APP_VERSION = "1.4.4";
-const CURRENT_RELEASE_NOTE_VERSION = "v1.4.4-ticket-update-alerts";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.4.4-ticket-update-alerts-and-equipment";
 const THEME_STORAGE_KEY = "crq-theme";
 const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
@@ -950,7 +950,13 @@ function showReleaseNoteIfNeeded(user: User) {
         <p>Central de Atendimento TIC <span aria-hidden="true">|</span> CRQ-12</p>
       </header>
       <div class="release-note-content">
-        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4.4</strong> avisa quando um chamado acompanhado recebe uma atualização.</p>
+        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4.4</strong> facilita a identificação dos equipamentos e avisa quando um chamado acompanhado recebe uma atualização.</p>
+        <section>
+          <h3><i data-lucide="tag"></i>Identificação obrigatória do equipamento</h3>
+          <ul>
+            <li>Chamados abertos na categoria <strong>Equipamentos</strong> agora exigem o modelo do equipamento e o número de patrimônio em campos separados.</li>
+          </ul>
+        </section>
         <section>
           <h3><i data-lucide="bell"></i>Alertas de atualização</h3>
           <ul>
