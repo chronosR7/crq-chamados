@@ -202,6 +202,7 @@ export async function loadDataFromSupabase(): Promise<AppData | null> {
       id: t.id,
       type: t.type as TicketType,
       category: t.category,
+      assetIdentifier: t.asset_identifier || undefined,
       title: t.title,
       description: t.description,
       status: t.status as TicketStatus,
@@ -286,6 +287,7 @@ function ticketPayload(ticket: Ticket) {
   return {
     type: ticket.type,
     category: ticket.category,
+    asset_identifier: ticket.assetIdentifier || null,
     title: ticket.title,
     description: ticket.description,
     status: ticket.status,

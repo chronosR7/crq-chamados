@@ -482,6 +482,10 @@ label {
   min-width: 0;
 }
 
+#asset-identifier-field[hidden] {
+  display: none !important;
+}
+
 input,
 select,
 textarea {

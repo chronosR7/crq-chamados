@@ -68,6 +68,8 @@ export interface Ticket {
   id: number;
   type: TicketType;
   category: string;
+  /** Modelo ou número de patrimônio para chamados da categoria Equipamentos. */
+  assetIdentifier?: string;
   title: string;
   description: string;
   status: TicketStatus;

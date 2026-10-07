@@ -80,8 +80,8 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
-const APP_VERSION = "1.3";
-const CURRENT_RELEASE_NOTE_VERSION = "v1.3-sidebar-conversation";
+const APP_VERSION = "1.4";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.4-equipment-identifier";
 const THEME_STORAGE_KEY = "crq-theme";
 const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
@@ -850,44 +850,19 @@ function showReleaseNoteIfNeeded(user: User) {
     <article class="release-note-modal" role="dialog" aria-modal="true" aria-labelledby="release-note-title" aria-describedby="release-note-summary" tabindex="-1">
       <header class="release-note-header">
         <div class="release-note-version"><i data-lucide="sparkles"></i><span>Atualização disponível</span></div>
-        <h2 id="release-note-title">Nota de Atualização — Versão v1.3</h2>
+        <h2 id="release-note-title">Nota de Atualização — Versão v1.4</h2>
         <p>Central de Atendimento TIC <span aria-hidden="true">|</span> CRQ-12</p>
       </header>
       <div class="release-note-content">
-        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.3</strong> concentra as melhorias recentes na comunicação dos chamados, na navegação lateral e na visibilidade das notificações.</p>
+        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4</strong> exige a identificação do equipamento nos chamados da categoria Equipamentos.</p>
         <section>
-          <h3><i data-lucide="message-circle"></i>Conversa do chamado</h3>
+          <h3><i data-lucide="tag"></i>Identificação do equipamento</h3>
           <ul>
-            <li>A descrição inicial do chamado agora aparece na comunicação principal, junto das mensagens e atualizações;</li>
-            <li>O histórico passou a ser apresentado em formato de conversa, com identificação do solicitante e da equipe por nome e avatar;</li>
-            <li>Atualizações automáticas do sistema permanecem separadas das conversas humanas e recebem indicação visual conforme o status;</li>
-            <li>O chat ganhou rolagem própria, preservando a altura das mensagens e evitando cortes de texto ou de imagens;</li>
-            <li>A tela de atendimento foi ajustada para ocupar melhor o espaço disponível, com cabeçalho e retorno para a fila posicionados corretamente.</li>
+            <li>Ao selecionar a categoria <strong>Equipamentos</strong>, o campo <strong>Modelo / patrimônio</strong> aparece e se torna obrigatório;</li>
+            <li>A identificação informada fica salva no chamado e visível nas propriedades da tela de atendimento.</li>
           </ul>
         </section>
-        <section>
-          <h3><i data-lucide="paperclip"></i>Anexos</h3>
-          <ul>
-            <li>Os anexos continuam em uma área própria para não poluir a conversa;</li>
-            <li>Miniaturas de imagens mostram o conteúdo completo, e nomes longos são abreviados sem estourar a lateral;</li>
-            <li>O botão de anexar arquivos recebeu apresentação mais clara e acessível.</li>
-          </ul>
-        </section>
-        <section>
-          <h3><i data-lucide="bell"></i>Status e notificações</h3>
-          <ul>
-            <li>Os blocos de atualização automática usam cores distintas para Agendado, Pendente, Solucionado, Fechado e Excluído, sem alterar a cor das mensagens dos usuários;</li>
-            <li>Notificações não lidas agora destacam o botão e o contador com pulso de ondas até serem abertas;</li>
-            <li>Ao abrir um chamado, a navegação global se recolhe para priorizar o atendimento, sem exibir a busca sobre a conversa.</li>
-          </ul>
-        </section>
-        <section>
-          <h3><i data-lucide="sliders-horizontal"></i>Navegação e acessibilidade</h3>
-          <ul>
-            <li>A barra lateral ganhou comportamento responsivo para telas baixas, com rolagem e espaçamento que evitam o corte do item <strong>Acessibilidade</strong> nos temas claro e escuro.</li>
-          </ul>
-        </section>
-        <p class="release-note-closing">Estas alterações tornam o atendimento mais claro, organizado e fácil de acompanhar para solicitantes e equipe TIC.</p>
+        <p class="release-note-closing">A identificação completa ajuda a equipe TIC a localizar o equipamento e iniciar o atendimento com as informações necessárias.</p>
       </div>
       <footer class="release-note-footer">
         <label class="release-note-dismiss"><input id="release-note-dismiss" type="checkbox" /><span><strong>Não mostrar novamente</strong><small>Esta nota não será exibida nos próximos acessos.</small></span></label>
@@ -2401,6 +2376,7 @@ function renderTicketDetail(ticket: Ticket, user: User) {
         <dl class="ticket-property-list">
           <div><dt>Tipo</dt><dd>${ticket.type === "incidente" ? "Incidente" : "Requisição"}</dd></div>
           <div><dt>Categoria</dt><dd>${escapeHtml(ticket.category)}</dd></div>
+          ${ticket.category === "Equipamentos" ? `<div><dt>Modelo / patrimônio</dt><dd>${escapeHtml(ticket.assetIdentifier || "Não informado")}</dd></div>` : ""}
           <div><dt>Departamento</dt><dd>${escapeHtml(departmentById(ticket.departmentId)?.name ?? "Não informado")}</dd></div>
           <div><dt>Responsável</dt><dd>${escapeHtml(assigned?.fullName ?? "Fila TIC")}</dd></div>
           <div><dt>Prioridade</dt><dd>${priorityPill(ticket.priority)}</dd></div>
@@ -2614,6 +2590,11 @@ function renderNewTicket(user: User) {
             <select name="category" required>
               ${categoryOptions.map((cat) => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join("")}
             </select>
+          </label>
+          <label id="asset-identifier-field" hidden>
+            Modelo / patrimônio do equipamento <span aria-hidden="true">*</span>
+            <input name="assetIdentifier" maxlength="120" placeholder="Ex.: LaserJet Pro M404 ou patrimônio 12345" aria-describedby="asset-identifier-help" />
+            <small id="asset-identifier-help">Informe o modelo ou o número de patrimônio do equipamento.</small>
           </label>
           <label>
             Prioridade
@@ -4364,6 +4345,20 @@ let selectedFormFiles: File[] = [];
 function bindTicketForms() {
   selectedFormFiles = [];
   const fileInput = document.querySelector<HTMLInputElement>('input[name="attachments"]');
+  const categoryInput = document.querySelector<HTMLSelectElement>('#new-ticket-form select[name="category"]');
+  const assetField = document.querySelector<HTMLLabelElement>("#asset-identifier-field");
+  const assetInput = document.querySelector<HTMLInputElement>('#new-ticket-form input[name="assetIdentifier"]');
+  const syncAssetIdentifierField = () => {
+    const required = categoryInput?.value === "Equipamentos";
+    if (assetField) assetField.hidden = !required;
+    if (assetInput) {
+      assetInput.required = required;
+      assetInput.setAttribute("aria-required", String(required));
+      if (!required) assetInput.value = "";
+    }
+  };
+  categoryInput?.addEventListener("change", syncAssetIdentifierField);
+  syncAssetIdentifierField();
 
   function updateFilePreviews() {
     const previewGrid = document.querySelector<HTMLDivElement>("#file-preview-grid");
@@ -4509,6 +4504,7 @@ function bindTicketForms() {
       id: nextTicketId(),
       type: formData.get("type") as TicketType,
       category: String(formData.get("category") ?? ""),
+      assetIdentifier: String(formData.get("assetIdentifier") ?? "").trim() || undefined,
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? ""),
       status: "novo",
