@@ -11590,6 +11590,53 @@ body:has(.ticket-detail-overlay) .ticket-detail-overlay {
   font-size: .61rem;
 }
 
+/* Avisos em tempo real para atualizações dos chamados. */
+#ticket-update-toast-region {
+  position: fixed;
+  z-index: 99998;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  width: min(390px, calc(100vw - 28px));
+  gap: 10px;
+  pointer-events: none;
+}
+
+.ticket-update-toast {
+  padding: 14px 16px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-left: 4px solid var(--brand);
+  border-radius: 12px;
+  box-shadow: 0 12px 34px rgb(0 0 0 / 24%);
+  pointer-events: auto;
+  animation: ticket-update-toast-in 220ms ease-out both;
+}
+
+.ticket-update-toast-heading { display: flex; align-items: center; gap: 8px; color: var(--brand); font-size: .78rem; }
+.ticket-update-toast-heading svg { width: 16px; height: 16px; }
+.ticket-update-toast-dismiss { margin-left: auto; padding: 2px; color: var(--muted); background: transparent; border: 0; cursor: pointer; }
+.ticket-update-toast-dismiss svg { width: 17px; height: 17px; }
+.ticket-update-toast-title { display: block; margin-top: 9px; font-size: .94rem; }
+.ticket-update-toast p { margin: 4px 0 10px; color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.ticket-update-toast-open { padding: 0; color: var(--brand); background: transparent; border: 0; font: inherit; font-size: .83rem; font-weight: 700; cursor: pointer; }
+.browser-alerts-state { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: .8rem; }
+.browser-alerts-state svg { width: 16px; height: 16px; }
+
+@keyframes ticket-update-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 520px) {
+  #ticket-update-toast-region { top: 10px; right: 10px; width: calc(100vw - 20px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-update-toast { animation: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .notification-trigger.has-unread,
   .notification-trigger.has-unread::before,

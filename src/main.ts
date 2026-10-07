@@ -80,8 +80,8 @@ import type { AppData, Attachment, AuthMode, Department, KnowledgeStep, Knowledg
 
 // Configurações e limites globais
 const MB_2 = MAX_ATTACHMENT_BYTES;
-const APP_VERSION = "1.4.3";
-const CURRENT_RELEASE_NOTE_VERSION = "v1.4.3-faster-ticket-actions";
+const APP_VERSION = "1.4.4";
+const CURRENT_RELEASE_NOTE_VERSION = "v1.4.4-ticket-update-alerts";
 const THEME_STORAGE_KEY = "crq-theme";
 const LOW_POWER_MODE_CLASS = "low-power-mode";
 const TIC_DASHBOARD_ORDER_STORAGE_KEY = "crq-tic-dashboard-widget-order";
@@ -237,6 +237,7 @@ const onlineUserIds = new Set<string>();
 let realtimeRefreshTimer: number | undefined;
 let pendingPopupUserId: string | undefined;
 let seenPendingPopupNotificationIds = new Set<string>();
+let seenRealtimeNotificationIds = new Set<string>();
 let scheduledTicketsCheckInFlight = false;
 
 function wait(ms: number) {
@@ -285,6 +286,17 @@ async function refreshFromServer() {
     realtimeRefreshDeferred = true;
     return;
   }
+  const activeUserId = state.currentUserId;
+  const alreadyKnownNotificationIds = new Set([
+    ...seenRealtimeNotificationIds,
+    ...data.notifications.filter((notification) => notification.userId === activeUserId).map((notification) => notification.id)
+  ]);
+  const newNotifications = activeUserId
+    ? remote.notifications.filter((notification) => notification.userId === activeUserId && !notification.read && !alreadyKnownNotificationIds.has(notification.id))
+    : [];
+  remote.notifications
+    .filter((notification) => notification.userId === activeUserId)
+    .forEach((notification) => seenRealtimeNotificationIds.add(notification.id));
   const selectedId = state.selectedTicketId;
   data = remote;
   ensureSeedData();
@@ -294,6 +306,7 @@ async function refreshFromServer() {
   }
   render();
   showNewPendingRequesterPopups();
+  showRealtimeNotificationAlerts(newNotifications);
 }
 
 function scheduleRealtimeRefresh() {
@@ -597,6 +610,79 @@ function rememberCurrentPendingPopupNotifications(user = currentUser()) {
       .filter((notification) => notification.userId === user.id)
       .map((notification) => notification.id)
   );
+  seenRealtimeNotificationIds = new Set(
+    data.notifications
+      .filter((notification) => notification.userId === user.id)
+      .map((notification) => notification.id)
+  );
+}
+
+function showRealtimeNotificationAlerts(notifications: NotificationItem[]) {
+  const user = currentUser();
+  if (!user || !notifications.length) return;
+  const ticketNotifications = notifications
+    .filter((notification) => notification.ticketId)
+    .filter((notification) => !isPendingNotificationForRequester(notification, user));
+  if (!ticketNotifications.length) return;
+
+  ticketNotifications.forEach((notification) => {
+    showTicketUpdateToast(notification);
+    if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+      try {
+        const nativeNotification = new Notification(notification.title, {
+          body: notification.body,
+          icon: "/crq12-logo.jpg",
+          tag: `ticket-${notification.ticketId}`
+        });
+        nativeNotification.onclick = () => {
+          window.focus();
+          void markNotificationAsRead(notification.id).then(() => render());
+          openTicket(notification.ticketId!);
+          nativeNotification.close();
+        };
+      } catch (error) {
+        devWarn("Não foi possível mostrar a notificação do navegador.", error);
+      }
+    }
+  });
+}
+
+function showTicketUpdateToast(notification: NotificationItem) {
+  if (!notification.ticketId) return;
+  let region = document.querySelector<HTMLElement>("#ticket-update-toast-region");
+  if (!region) {
+    region = document.createElement("div");
+    region.id = "ticket-update-toast-region";
+    region.setAttribute("aria-live", "polite");
+    region.setAttribute("aria-relevant", "additions text");
+    document.body.appendChild(region);
+  }
+  const toast = document.createElement("article");
+  toast.className = "ticket-update-toast";
+  toast.setAttribute("role", "status");
+  toast.dataset.notificationId = notification.id;
+  toast.innerHTML = `
+    <div class="ticket-update-toast-heading"><i data-lucide="bell"></i><strong>Chamado atualizado</strong>
+      <button type="button" class="ticket-update-toast-dismiss" aria-label="Dispensar aviso" data-dismiss-toast><i data-lucide="x"></i></button>
+    </div>
+    <strong class="ticket-update-toast-title">${escapeHtml(notification.title)}</strong>
+    <p>${escapeHtml(notification.body)}</p>
+    <button type="button" class="ticket-update-toast-open" data-open-toast>Ver chamado #${notification.ticketId}</button>`;
+  region.prepend(toast);
+  while (region.children.length > 3) region.lastElementChild?.remove();
+  createIcons({ icons: usedIcons, nameAttr: "data-lucide" });
+  const dismiss = () => toast.remove();
+  const timer = window.setTimeout(dismiss, 15000);
+  toast.querySelector<HTMLButtonElement>("[data-dismiss-toast]")?.addEventListener("click", () => {
+    window.clearTimeout(timer);
+    dismiss();
+  });
+  toast.querySelector<HTMLButtonElement>("[data-open-toast]")?.addEventListener("click", () => {
+    window.clearTimeout(timer);
+    void markNotificationAsRead(notification.id).then(() => render());
+    openTicket(notification.ticketId!);
+    dismiss();
+  });
 }
 
 function showNewPendingRequesterPopups() {
@@ -859,20 +945,20 @@ function showReleaseNoteIfNeeded(user: User) {
   overlay.innerHTML = `
     <article class="release-note-modal" role="dialog" aria-modal="true" aria-labelledby="release-note-title" aria-describedby="release-note-summary" tabindex="-1">
       <header class="release-note-header">
-        <div class="release-note-version"><i data-lucide="sparkles"></i><span>Atualização disponível</span></div>
-        <h2 id="release-note-title">Nota de Atualização — Versão v1.4.3</h2>
+      <div class="release-note-version"><i data-lucide="sparkles"></i><span>Atualização disponível</span></div>
+        <h2 id="release-note-title">Nota de Atualização — Versão v1.4.4</h2>
         <p>Central de Atendimento TIC <span aria-hidden="true">|</span> CRQ-12</p>
       </header>
       <div class="release-note-content">
-        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4.3</strong> deixa as alterações do atendimento mais ágeis e imediatas.</p>
+        <p id="release-note-summary" class="release-note-lead">A versão <strong>v1.4.4</strong> avisa quando um chamado acompanhado recebe uma atualização.</p>
         <section>
-          <h3><i data-lucide="tag"></i>Identificação do equipamento</h3>
+          <h3><i data-lucide="bell"></i>Alertas de atualização</h3>
           <ul>
-            <li>Ao alterar responsável, prioridade ou andamento, a tela reflete a mudança imediatamente enquanto a gravação é concluída;</li>
-            <li>O sistema mostra quando a alteração está sendo salva e reverte a tela se o servidor não aceitar a mudança.</li>
+            <li>Uma faixa destacada aparece no sistema quando há novidades em um chamado;</li>
+            <li>Na central de notificações, você pode ativar os avisos do navegador para recebê-los também quando estiver usando outra janela.</li>
           </ul>
         </section>
-        <p class="release-note-closing">A identificação completa ajuda a equipe TIC a localizar o equipamento e iniciar o atendimento com as informações necessárias.</p>
+        <p class="release-note-closing">Os avisos do navegador são opcionais e dependem da permissão concedida neste dispositivo.</p>
       </div>
       <footer class="release-note-footer">
         <label class="release-note-dismiss"><input id="release-note-dismiss" type="checkbox" /><span><strong>Não mostrar novamente</strong><small>Esta nota não será exibida nos próximos acessos.</small></span></label>
@@ -2941,6 +3027,8 @@ function getUserNotifications(user: User): NotificationItem[] {
 /** Renderiza a tela de notificações do usuário */
 function renderNotifications(user: User) {
   const items = getUserNotifications(user);
+  const browserAlertsSupported = "Notification" in window;
+  const browserAlertsPermission = browserAlertsSupported ? Notification.permission : "unsupported";
   return `
     <section class="panel">
       <div class="panel-header">
@@ -2949,12 +3037,18 @@ function renderNotifications(user: User) {
           <h2>Notificações e e-mails</h2>
         </div>
         <div class="row-actions">
-          ${user.role === "tic" && "Notification" in window ? `
+          ${browserAlertsPermission === "default" ? `
             <button id="enable-browser-alerts" class="ghost-button" type="button">
               <i data-lucide="monitor-up"></i>
-              Ativar navegador
+              Ativar alertas do navegador
             </button>
-          ` : ""}
+          ` : browserAlertsPermission === "granted" ? `
+            <span class="browser-alerts-state"><i data-lucide="circle-check"></i> Alertas do navegador ativos</span>
+          ` : browserAlertsPermission === "denied" ? `
+            <span class="browser-alerts-state" title="Altere a permissão nas configurações do site no navegador."><i data-lucide="bell"></i> Alertas bloqueados nas permissões do navegador</span>
+          ` : browserAlertsSupported ? "" : `
+            <span class="browser-alerts-state">Este navegador não oferece alertas do sistema.</span>
+          `}
           <button id="clear-notifications" class="ghost-button" type="button" style="color: var(--red);">
             <i data-lucide="trash-2"></i>
             Limpar
