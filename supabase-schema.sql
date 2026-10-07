@@ -35,7 +35,8 @@ create table public.tickets (
   description text not null,
   type public.ticket_type not null,
   category text not null,
-  asset_identifier text,
+  equipment_model text,
+  asset_number text,
   status public.ticket_status not null default 'novo',
   priority public.priority_level not null default 'media',
   requester_id uuid not null references public.profiles (id),
@@ -56,15 +57,16 @@ set search_path = public
 as $$
 begin
   if new.category = 'Equipamentos'
-     and nullif(trim(coalesce(new.asset_identifier, '')), '') is null then
-    raise exception 'Informe o modelo ou patrimônio do equipamento.';
+     and (nullif(trim(coalesce(new.equipment_model, '')), '') is null
+       or nullif(trim(coalesce(new.asset_number, '')), '') is null) then
+    raise exception 'Informe o modelo e o número de patrimônio do equipamento.';
   end if;
   return new;
 end;
 $$;
 
 create trigger tickets_require_equipment_identifier
-before insert or update of category, asset_identifier on public.tickets
+before insert or update of category, equipment_model, asset_number on public.tickets
 for each row execute function public.require_equipment_identifier();
 
 create table public.ticket_events (

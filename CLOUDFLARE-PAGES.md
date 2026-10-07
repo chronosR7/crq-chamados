@@ -50,10 +50,12 @@ O endereço exato exibido pelo Cloudflare deve substituir os exemplos acima.
 
 ## 4. O que já está preparado no código
 
-Antes de publicar a versão v1.4, execute `supabase-ticket-asset-identifier.sql`
-no SQL Editor do projeto Supabase. A migração cria o campo e bloqueia novos
-chamados de **Equipamentos** sem modelo ou patrimônio. Faça isso antes do
-deploy do frontend para que o formulário e o banco estejam sincronizados.
+Antes de publicar a versão v1.4.1, execute `supabase-ticket-equipment-details.sql`
+no SQL Editor do projeto Supabase. A migração separa modelo e patrimônio e exige
+ambos nos novos chamados de **Equipamentos**. Ela preserva o valor já informado
+no campo único da versão anterior, que continua visível como identificação antiga.
+Faça isso antes do deploy do
+frontend para que o formulário e o banco estejam sincronizados.
 
 - `public/_redirects` redireciona rotas da SPA para `index.html`.
 - `public/_headers` preserva CSP, proteção contra iframe e cache dos assets.

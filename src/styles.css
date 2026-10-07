@@ -482,8 +482,12 @@ label {
   min-width: 0;
 }
 
-#asset-identifier-field[hidden] {
+.equipment-identifier-field[hidden] {
   display: none !important;
+}
+
+.ticket-form .form-grid {
+  align-items: start;
 }
 
 input,
